@@ -13,6 +13,12 @@ const blog = defineCollection({
 		pubDate: z.coerce.date(),
 		updatedDate: z.coerce.date().optional(),
 		heroImage: z.string().optional(),
+		category: z.enum([
+			"整備の現場",
+			"越境EC事業",
+			"AI・自動化",
+			"対馬ライフ",
+		]),
 	}),
 });
 

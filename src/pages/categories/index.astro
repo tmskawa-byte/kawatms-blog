@@ -1,0 +1,94 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_TITLE, CATEGORIES } from '../../consts';
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('blog');
+const countsByCategory = posts.reduce<Record<string, number>>((acc, post) => {
+	const c = post.data.category;
+	acc[c] = (acc[c] ?? 0) + 1;
+	return acc;
+}, {});
+---
+
+<!doctype html>
+<html lang="ja">
+	<head>
+		<BaseHead
+			title={`カテゴリ一覧 | ${SITE_TITLE}`}
+			description="kawatms blog のカテゴリ一覧"
+		/>
+		<style>
+			main {
+				width: 960px;
+				max-width: calc(100% - 2em);
+				margin: auto;
+				padding: 1em;
+			}
+			h1 {
+				margin-bottom: 1em;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+				gap: 1.25rem;
+			}
+			.card {
+				display: block;
+				padding: 1.25rem;
+				border: 1px solid rgba(var(--gray), 0.25);
+				border-radius: 12px;
+				background: white;
+				color: rgb(var(--black));
+				text-decoration: none;
+				transition: 0.2s ease;
+			}
+			.card:hover {
+				box-shadow: var(--box-shadow);
+				border-color: rgb(var(--accent));
+			}
+			.emoji {
+				font-size: 2rem;
+				line-height: 1;
+			}
+			.name {
+				margin: 0.5rem 0 0.25rem 0;
+				font-size: 1.25rem;
+				font-weight: 700;
+			}
+			.desc {
+				margin: 0 0 0.5rem 0;
+				color: rgb(var(--gray));
+				font-size: 0.95rem;
+			}
+			.count {
+				color: rgb(var(--gray));
+				font-size: 0.85rem;
+			}
+			@media (max-width: 720px) {
+				.grid {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>カテゴリ一覧</h1>
+			<div class="grid">
+				{CATEGORIES.map((cat) => (
+					<a class="card" href={`/category/${cat.name}/`}>
+						<div class="emoji">{cat.emoji}</div>
+						<h2 class="name">{cat.name}</h2>
+						<p class="desc">{cat.description}</p>
+						<p class="count">記事数: {countsByCategory[cat.name] ?? 0}</p>
+					</a>
+				))}
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>

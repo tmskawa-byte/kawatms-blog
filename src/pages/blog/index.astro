@@ -2,7 +2,7 @@
 import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+import { SITE_TITLE, SITE_DESCRIPTION, getCategoryMeta } from '../../consts';
 import { getCollection } from 'astro:content';
 import FormattedDate from '../../components/FormattedDate.astro';
 
@@ -12,7 +12,7 @@ const posts = (await getCollection('blog')).sort(
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="ja">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<style>
@@ -61,6 +61,21 @@ const posts = (await getCollection('blog')).sort(
 				margin: 0;
 				color: rgb(var(--gray));
 			}
+			.cat-badge {
+				display: inline-block;
+				margin-top: 0.4rem;
+				padding: 0.15em 0.6em;
+				border-radius: 999px;
+				background: rgba(var(--gray), 0.12);
+				color: rgb(var(--gray-dark));
+				font-size: 0.8rem;
+				text-decoration: none;
+				transition: 0.2s ease;
+			}
+			.cat-badge:hover {
+				background: rgba(var(--accent), 0.15);
+				color: rgb(var(--accent));
+			}
 			ul li a:hover h4,
 			ul li a:hover .date {
 				color: rgb(var(--accent));
@@ -91,17 +106,25 @@ const posts = (await getCollection('blog')).sort(
 			<section>
 				<ul>
 					{
-						posts.map((post) => (
-							<li>
-								<a href={`/blog/${post.id}/`}>
-									<img width={720} height={360} src={post.data.heroImage} alt="" />
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-								</a>
-							</li>
-						))
+						posts.map((post) => {
+							const cat = getCategoryMeta(post.data.category);
+							return (
+								<li>
+									<a href={`/blog/${post.id}/`}>
+										<img width={720} height={360} src={post.data.heroImage} alt="" />
+										<h4 class="title">{post.data.title}</h4>
+										<p class="date">
+											<FormattedDate date={post.data.pubDate} />
+										</p>
+									</a>
+									{cat && (
+										<a class="cat-badge" href={`/category/${cat.name}/`}>
+											{cat.emoji} {cat.name}
+										</a>
+									)}
+								</li>
+							);
+						})
 					}
 				</ul>
 			</section>

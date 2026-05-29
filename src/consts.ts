@@ -3,4 +3,4 @@
 
 export const SITE_TITLE = "kawatms";
 export const SITE_DESCRIPTION =
-	"対馬の整備工場経営者が、車・AI・金融・越境ECの実践記録を発信";
+	"対馬の整備工場経営者が、車・AI API による自動化・越境ECの実践記録を発信";

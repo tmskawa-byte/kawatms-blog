@@ -1,0 +1,56 @@
+name: State Update (post-merge)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bump_state:
+    if: |
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'auto-article')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Dump PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          mkdir -p /tmp/pr
+          printf '%s' "$PR_BODY" > /tmp/pr/body.txt
+          head -50 /tmp/pr/body.txt
+
+      - name: Bump rotation + history
+        run: |
+          python scripts/bump_state.py \
+            --pr-body /tmp/pr/body.txt \
+            --pr-title "${{ github.event.pull_request.title }}"
+
+      - name: Commit & push state
+        run: |
+          git config user.name "auto-article-bot"
+          git config user.email "auto-article-bot@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain state/)" ]]; then
+            git add state/
+            git commit -m "chore(state): bump rotation after PR #${{ github.event.pull_request.number }} merge [skip ci]"
+            git pull --rebase origin main || true
+            git push origin main
+            echo "State pushed."
+          else
+            echo "No state changes."
+          fi

@@ -1,7 +1,7 @@
 """
 記事 JSON → src/content/blog/{YYYY-MM-DD}-{slug}.md ファイル化。
 
-- frontmatter: title, description, pubDate (Astro 形式の 'May 30 2026'), category
+- frontmatter: title, description, pubDate (Astro 形式の 'May 30 2026'), category, heroImage(任意)
 - 本文先頭に PR 表記を強制挿入
 - アフィリエイトトークンを実 HTML に置換
 - slug は title から英数字化 / ハッシュで一意化
@@ -14,7 +14,7 @@ import os
 import re
 import unicodedata
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from scripts.affiliates import prepend_pr_notice, replace_tokens
 
@@ -67,18 +67,24 @@ def build_frontmatter(
     description: str,
     pub_dt: datetime,
     category: str,
+    hero_image_url: Optional[str] = None,
 ) -> str:
     title_e = escape_yaml_single_quote(title)
     desc_e = escape_yaml_single_quote(description)
     cat_e = escape_yaml_single_quote(category)
-    return (
-        "---\n"
-        f"title: '{title_e}'\n"
-        f"description: '{desc_e}'\n"
-        f"pubDate: '{format_pubdate(pub_dt)}'\n"
-        f"category: '{cat_e}'\n"
-        "---\n"
-    )
+    lines = [
+        "---",
+        f"title: '{title_e}'",
+        f"description: '{desc_e}'",
+        f"pubDate: '{format_pubdate(pub_dt)}'",
+        f"category: '{cat_e}'",
+    ]
+    if hero_image_url:
+        hero_e = escape_yaml_single_quote(hero_image_url)
+        lines.append(f"heroImage: '{hero_e}'")
+    lines.append("---")
+    lines.append("")
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -92,9 +98,15 @@ def render_article(
     subtopic_key: str,
     pub_dt: datetime,
     dry_run_dir: str = "",
+    hero_image_url: Optional[str] = None,
 ) -> Tuple[str, str, List[str]]:
     """
     記事ファイルを作成。
+
+    Args:
+        hero_image_url: frontmatter に書き込む heroImage の URL/パス。
+            None の場合は frontmatter に heroImage 行を入れない。
+            通常は `/images/articles/{slug}.{ext}` のような public 配下パス。
 
     Returns: (filepath, slug, used_affiliate_labels)
     """
@@ -123,7 +135,7 @@ def render_article(
     body_final = prepend_pr_notice(body_replaced)
 
     # 3. frontmatter + 本文を結合
-    fm = build_frontmatter(title, description, pub_dt, category)
+    fm = build_frontmatter(title, description, pub_dt, category, hero_image_url)
     full_md = fm + "\n" + body_final.strip() + "\n"
 
     # 4. slug + filepath
@@ -136,6 +148,7 @@ def render_article(
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(full_md)
 
-    LOG.info("Wrote article: %s (%d chars body, %d affiliates: %s)",
-             filepath, len(body_final), len(used_labels), used_labels)
+    LOG.info("Wrote article: %s (%d chars body, %d affiliates: %s, hero=%s)",
+             filepath, len(body_final), len(used_labels), used_labels,
+             hero_image_url or "(none)")
     return filepath, slug, used_labels

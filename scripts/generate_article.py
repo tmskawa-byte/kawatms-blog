@@ -8,8 +8,13 @@ Pipeline:
     4. Stage 1: 調査メモ生成 (Gemini 3.1 Pro Preview)
        - SKIP 判定なら exit 0
     5. Stage 2: 記事本文 + メタ JSON 生成
+    5.5 Stage 2.5: ヒーロー画像プロンプト生成 (Gemini)
+    5.6 Stage 2.6: 画像生成 (Nano Banana Pro) → public/images/articles/{slug}.{ext}
     6. アフィリエイト挿入 + PR 表記付与 + slug 化 → src/content/blog/*.md
     7. dry-run でなければ summary を stdout に出力（workflow が PR 作成に使う）
+
+画像生成は --skip-image で OFF にできる（テキストだけテストしたい時）。
+画像生成が失敗しても記事生成は継続（heroImage なしで render）。
 
 Env:
     CHATLLM_API_KEY, TAVILY_API_KEY
@@ -22,6 +27,8 @@ CLI:
     --seed N          : 抽選決定論化
     --preview-only    : トピック決定だけ表示して即終了
     --out-dir PATH    : 出力先ディレクトリ override（テスト用）
+    --skip-image      : ヒーロー画像生成をスキップ（テキストだけ）
+    --image-out-dir P : ヒーロー画像保存先 override（テスト用）
 """
 from __future__ import annotations
 
@@ -33,7 +40,7 @@ import random
 import re
 import sys
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # repo root を sys.path に追加（scripts.* / prompts.* import のため）
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +49,11 @@ if _REPO_ROOT not in sys.path:
 
 from scripts.lib.chatllm_client import ChatLLMClient, ChatLLMError
 from scripts.lib.tavily_client import TavilyClient, TavilyError
+from scripts.lib.image_utils import (
+    ImageFetchError,
+    extension_for_mime,
+    fetch_image_bytes,
+)
 from scripts.topics import (
     CATEGORY_SUBTOPICS,
     SEIBI_SUBTOPICS,
@@ -51,7 +63,7 @@ from scripts.topics import (
     build_query,
 )
 from scripts.affiliates import build_affiliate_hint
-from scripts.render import render_article
+from scripts.render import render_article, slugify
 from prompts.system import PERSONA_HEADER  # noqa: F401  (imported for completeness)
 from prompts.stage1_research import (
     STAGE1_SYSTEM_PROMPT,
@@ -63,15 +75,27 @@ from prompts.stage2_article import (
     build_stage2_user_input,
     format_recent_subtopics_for_prompt,
 )
+from prompts.hero_image import (
+    HERO_IMAGE_SYSTEM_PROMPT,
+    build_hero_image_user_input,
+)
 from prompts.templates import get_template
 
 LOG = logging.getLogger("generate_article")
 
 TEXT_MODEL = "gemini-3.1-pro-preview"
+IMAGE_MODEL = "nano_banana_pro"
+HERO_ASPECT_RATIO = "16:9"
+HERO_RESOLUTION = "2K"
 
 STATE_DIR = os.path.join(_REPO_ROOT, "state")
 RECENT_SUBTOPICS_FILE = os.path.join(STATE_DIR, "recent_subtopics.json")
 ROTATION_INDEX_FILE = os.path.join(STATE_DIR, "rotation_index.json")
+
+# 画像保存先（public/images/articles/）。public/ 配下なので Astro がそのまま配信する。
+HERO_IMAGE_DIR = os.path.join(_REPO_ROOT, "public", "images", "articles")
+# 記事 frontmatter / <img src> から参照するときの URL パス（先頭 / 必須）
+HERO_IMAGE_URL_PREFIX = "/images/articles"
 
 SUBTOPIC_EXCLUDE_WINDOW = 5
 SUBTOPIC_HISTORY_KEEP = 20
@@ -172,6 +196,99 @@ def extract_json(text: str) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Hero image: prompt → bytes → save → URL
+# ---------------------------------------------------------------------------
+def generate_and_save_hero_image(
+    chatllm: ChatLLMClient,
+    title: str,
+    description: str,
+    category: str,
+    subtopic_key: str,
+    slug: str,
+    out_dir: str,
+    url_prefix: str,
+) -> Optional[Tuple[str, str]]:
+    """
+    Stage 2.5 (prompt 生成) + 2.6 (画像生成 + 保存) をまとめて実行。
+
+    Returns: (saved_filepath, public_url) on success, None on failure.
+    失敗は raise せずに None を返す（heroImage なしで記事は継続生成する）。
+    """
+    # ----- Stage 2.5: prompt 生成 -----
+    try:
+        user_input = build_hero_image_user_input(
+            title=title,
+            description=description,
+            category=category,
+            subtopic_key=subtopic_key,
+        )
+        LOG.info("Stage 2.5 (hero image prompt) starting...")
+        image_prompt = chatllm.chat(
+            model=TEXT_MODEL,
+            system=HERO_IMAGE_SYSTEM_PROMPT,
+            user=user_input,
+            timeout=120,
+        )
+        image_prompt = (image_prompt or "").strip()
+        # Markdown コードフェンスや先頭引用符を剥がす
+        if image_prompt.startswith("```"):
+            image_prompt = re.sub(r"^```[a-zA-Z]*\n", "", image_prompt)
+            image_prompt = re.sub(r"\n```$", "", image_prompt)
+            image_prompt = image_prompt.strip()
+        if not image_prompt:
+            LOG.warning("Hero image prompt is empty; skipping image generation")
+            return None
+        LOG.info("Hero image prompt: %d chars; head: %s",
+                 len(image_prompt), image_prompt[:200].replace("\n", " "))
+    except ChatLLMError as e:
+        LOG.warning("Hero image prompt generation failed: %s (continuing without image)", e)
+        return None
+
+    # ----- Stage 2.6: 画像生成 -----
+    try:
+        LOG.info("Generating hero image via %s (%s, %s)...",
+                 IMAGE_MODEL, HERO_ASPECT_RATIO, HERO_RESOLUTION)
+        image_url_raw = chatllm.generate_image(
+            model=IMAGE_MODEL,
+            prompt=image_prompt,
+            aspect_ratio=HERO_ASPECT_RATIO,
+            resolution=HERO_RESOLUTION,
+            num_images=1,
+            timeout=360,
+        )
+    except ChatLLMError as e:
+        LOG.warning("Hero image generation failed: %s (continuing without image)", e)
+        return None
+
+    LOG.info("Image URL kind: %s",
+             "data-url" if image_url_raw.startswith("data:") else "http")
+
+    # ----- 画像を bytes 化 -----
+    try:
+        image_bytes, mime = fetch_image_bytes(image_url_raw, timeout=120)
+    except ImageFetchError as e:
+        LOG.warning("Image fetch failed: %s (continuing without image)", e)
+        return None
+    LOG.info("Image bytes: %d, mime: %s", len(image_bytes), mime)
+
+    # ----- 保存 -----
+    ext = extension_for_mime(mime)
+    filename = f"{slug}{ext}"
+    os.makedirs(out_dir, exist_ok=True)
+    filepath = os.path.join(out_dir, filename)
+    try:
+        with open(filepath, "wb") as f:
+            f.write(image_bytes)
+    except OSError as e:
+        LOG.warning("Image save failed: %s (continuing without image)", e)
+        return None
+
+    public_url = f"{url_prefix}/{filename}"
+    LOG.info("Hero image saved: %s (public URL: %s)", filepath, public_url)
+    return filepath, public_url
+
+
+# ---------------------------------------------------------------------------
 # Workflow output (GitHub Actions $GITHUB_OUTPUT 用)
 # ---------------------------------------------------------------------------
 def write_gh_output(key: str, value: str) -> None:
@@ -216,6 +333,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out-dir", default="",
                    help="出力ディレクトリ override（テスト用）")
     p.add_argument("--max-tavily-results", type=int, default=10)
+    p.add_argument("--skip-image", action="store_true",
+                   help="ヒーロー画像生成をスキップ（テキストだけ）")
+    p.add_argument("--image-out-dir", default="",
+                   help="ヒーロー画像保存ディレクトリ override（テスト用）
     return p.parse_args()
 
 
@@ -232,7 +353,6 @@ def main() -> int:
     rng = random.Random(args.seed) if args.seed is not None else random
     today_jst = now_jst()
     weekday = today_jst.weekday()  # 0=月
-
     rotation = read_rotation_index()
     history = read_recent_subtopics()
 
@@ -373,9 +493,32 @@ def main() -> int:
                   title[:60], len(body_markdown))
         return 6
 
+    # ----- 5.5 / 5.6: hero image -----
+    # render より先に slug を決めて、ファイル名を hero image と一致させる
+    date_str = today_jst.strftime("%Y-%m-%d")
+    slug = slugify(title, date_str)
+
+    hero_image_url: Optional[str] = None
+    if args.skip_image:
+        LOG.info("--skip-image given; skipping hero image generation")
+    else:
+        image_out_dir = args.image_out_dir or HERO_IMAGE_DIR
+        result = generate_and_save_hero_image(
+            chatllm=chatllm,
+            title=title,
+            description=description,
+            category=category,
+            subtopic_key=subtopic_key,
+            slug=slug,
+            out_dir=image_out_dir,
+            url_prefix=HERO_IMAGE_URL_PREFIX,
+        )
+        if result is not None:
+            _saved_path, hero_image_url = result
+
     # ----- 6. Render markdown -----
     try:
-        filepath, slug, used_aff = render_article(
+        filepath, slug_out, used_aff = render_article(
             title=title,
             description=description,
             body_markdown=body_markdown,
@@ -383,23 +526,32 @@ def main() -> int:
             subtopic_key=subtopic_key,
             pub_dt=today_jst,
             dry_run_dir=args.out_dir,
+            hero_image_url=hero_image_url,
         )
     except (ValueError, OSError) as e:
         LOG.error("Render failed: %s", e)
         return 7
 
+    # slug が事前計算と一致することを確認（不整合があれば warn）
+    if slug_out != slug:
+        LOG.warning("Slug mismatch: pre-computed=%s, render returned=%s. "
+                    "Hero image filename may not match article slug.",
+                    slug, slug_out)
+
     word_count = len(body_markdown)
-    LOG.info("=== Generated: %s (%d chars) ===", filepath, word_count)
+    LOG.info("=== Generated: %s (%d chars, hero=%s) ===",
+             filepath, word_count, hero_image_url or "(none)")
 
     # ----- 7. Workflow output -----
     write_gh_output("category", category)
     write_gh_output("subtopic_key", subtopic_key)
     write_gh_output("candidate", candidate)
     write_gh_output("title", title)
-    write_gh_output("slug", slug)
+    write_gh_output("slug", slug_out)
     write_gh_output("filepath", filepath)
     write_gh_output("word_count", str(word_count))
     write_gh_output("used_affiliates", ", ".join(used_aff) if used_aff else "(none)")
+    write_gh_output("hero_image", hero_image_url or "(none)")
     # for body of PR
     pr_body = (
         f"AI が自動生成した記事の PR です。\n\n"
@@ -408,7 +560,8 @@ def main() -> int:
         f"- 検索キーワード: {candidate}\n"
         f"- 文字数: {word_count}\n"
         f"- 採用アフィリエイト: {', '.join(used_aff) if used_aff else '(なし)'}\n"
-        f"- タグ: {', '.join(tags) if tags else '(なし)'}\n\n"
+        f"- タグ: {', '.join(tags) if tags else '(なし)'}\n"
+        f"- ヒーロー画像: {hero_image_url or '(なし)'}\n\n"
         f"## レビュー手順\n"
         f"1. Cloudflare Pages のプレビュー URL（このコメントに自動付与されます）で表示確認\n"
         f"2. 編集が必要なら GitHub Web / Mobile で `{filepath.replace(_REPO_ROOT + '/', '')}` を直接編集\n"
@@ -425,7 +578,8 @@ def main() -> int:
         f"- **{title}**\n"
         f"- {category} / {subtopic_key} / {candidate}\n"
         f"- {word_count} chars\n"
-        f"- file: `{filepath}`\n\n"
+        f"- file: `{filepath}`\n"
+        f"- hero: `{hero_image_url or '(none)'}`\n\n"
     )
 
     if args.dry_run:

@@ -1,6 +1,6 @@
 ---
 title: 'はじめまして、対馬の整備工場経営者です'
-description: 'kawatms blog 開設しました。車・AI API による自動化・越境EC のリアルを発信します。'
+description: '対馬モーターサービス blog 開設しました。車・AI API による自動化・越境EC のリアルを発信します。'
 pubDate: 'May 29 2026'
 category: '対馬ライフ'
 ---

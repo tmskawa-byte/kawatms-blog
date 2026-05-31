@@ -1,0 +1,131 @@
+---
+import Layout from '../../layouts/BlogPost.astro';
+---
+
+<Layout
+	title="特定商取引法に基づく表記"
+	description="対馬モーターサービス blog の運営に関する特定商取引法に基づく表記。販売業者、運営責任者、所在地、連絡先その他の事業者情報を記載しています。"
+	pubDate={new Date('May 31 2026')}
+>
+	<p>
+		特定商取引に関する法律第 11 条に基づき、以下のとおり表示します。
+	</p>
+
+	<table class="legal-table">
+		<tbody>
+			<tr>
+				<th>販売業者</th>
+				<td>対馬モーターサービス（個人事業主）</td>
+			</tr>
+			<tr>
+				<th>運営統括責任者</th>
+				<td>河本 岳志（かわもと たけし）</td>
+			</tr>
+			<tr>
+				<th>所在地</th>
+				<td>
+					長崎県対馬市<br />
+					<small>※詳細な住所は、請求があった場合に遅滞なく開示いたします。</small>
+				</td>
+			</tr>
+			<tr>
+				<th>電話番号</th>
+				<td>
+					請求があった場合に遅滞なく開示いたします。<br />
+					<small>※お問い合わせは、原則として下記の電子メールまたは<a href="/contact/">お問い合わせフォーム</a>にてお願いいたします。</small>
+				</td>
+			</tr>
+			<tr>
+				<th>電子メールアドレス</th>
+				<td>tmskawa@gmail.com</td>
+			</tr>
+			<tr>
+				<th>適格請求書発行事業者登録番号</th>
+				<td>
+					適格請求書発行事業者として登録済み。<br />
+					<small>※登録番号（T から始まる 13 桁）は、適格請求書の交付時に記載いたします。</small>
+				</td>
+			</tr>
+			<tr>
+				<th>事業形態</th>
+				<td>個人事業主</td>
+			</tr>
+			<tr>
+				<th>事業内容</th>
+				<td>
+					自動車整備業、ブログ運営および同ブログを通じた広告掲載（アフィリエイト・プログラムを含む）、ならびに将来における越境 EC 事業
+				</td>
+			</tr>
+			<tr>
+				<th>販売価格</th>
+				<td>
+					当サイトは、当事業主が物品またはサービスを直接販売するものではありません。アフィリエイト広告から遷移する先の販売価格、送料、消費税および支払条件は、各広告主・販売事業者のサイトに表示される条件に従います。
+				</td>
+			</tr>
+			<tr>
+				<th>商品代金以外の必要料金</th>
+				<td>
+					当サイトの閲覧および当サイトからアフィリエイト広告を経由して各広告主の商品ページへ遷移する際の通信料は、利用者の負担とします。
+				</td>
+			</tr>
+			<tr>
+				<th>申込みの有効期限</th>
+				<td>該当する場合は各広告主のサイトに表示される条件に従います。</td>
+			</tr>
+			<tr>
+				<th>引渡時期</th>
+				<td>各広告主のサイトに表示される条件に従います。</td>
+			</tr>
+			<tr>
+				<th>支払方法</th>
+				<td>各広告主のサイトに表示される条件に従います。</td>
+			</tr>
+			<tr>
+				<th>返品・交換・キャンセル</th>
+				<td>
+					アフィリエイト広告から遷移した先の販売事業者の規定に従います。当事業主は、当該取引について当事者ではなく、返品、交換、キャンセル、返金、保証その他の責任を負わないものとします。
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p><small>制定日：2026 年 5 月 31 日</small></p>
+</Layout>
+
+<style is:global>
+	.legal-table {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 1.5em 0;
+	}
+	.legal-table th,
+	.legal-table td {
+		border: 1px solid rgba(var(--gray), 0.3);
+		padding: 0.75em 1em;
+		text-align: left;
+		vertical-align: top;
+	}
+	.legal-table th {
+		width: 30%;
+		background: rgba(var(--gray-light), 0.5);
+		font-weight: 600;
+		white-space: nowrap;
+	}
+	@media (max-width: 600px) {
+		.legal-table th,
+		.legal-table td {
+			display: block;
+			width: 100%;
+			white-space: normal;
+			border: none;
+			padding: 0.5em 0.75em;
+		}
+		.legal-table th {
+			border-top: 1px solid rgba(var(--gray), 0.3);
+			background: rgba(var(--gray-light), 0.5);
+		}
+		.legal-table td {
+			border-bottom: 1px solid rgba(var(--gray), 0.2);
+		}
+	}
+</style>

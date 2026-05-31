@@ -3,7 +3,20 @@ const today = new Date();
 ---
 
 <footer>
-	&copy; {today.getFullYear()} 対馬モーターサービス
+	<nav class="footer-links" aria-label="フッターナビゲーション">
+		<a href="/about/">運営者情報</a>
+		<span class="sep" aria-hidden="true">/</span>
+		<a href="/privacy-policy/">プライバシーポリシー</a>
+		<span class="sep" aria-hidden="true">/</span>
+		<a href="/legal/tokushou/">特定商取引法に基づく表記</a>
+		<span class="sep" aria-hidden="true">/</span>
+		<a href="/affiliate-policy/">アフィリエイトポリシー</a>
+		<span class="sep" aria-hidden="true">/</span>
+		<a href="/contact/">お問い合わせ</a>
+	</nav>
+	<div class="copyright">
+		&copy; {today.getFullYear()} 対馬モーターサービス
+	</div>
 	<div class="social-links">
 		<a href="https://www.instagram.com/kawatms/" target="_blank" rel="noopener">
 			<span class="sr-only">Instagram @kawatms</span>
@@ -22,6 +35,29 @@ const today = new Date();
 		color: rgb(var(--gray));
 		text-align: center;
 	}
+	.footer-links {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 0.4em 0.6em;
+		margin-bottom: 1em;
+		font-size: 0.9rem;
+	}
+	.footer-links a {
+		color: rgb(var(--gray-dark));
+		text-decoration: none;
+	}
+	.footer-links a:hover {
+		color: rgb(var(--accent));
+		text-decoration: underline;
+	}
+	.footer-links .sep {
+		color: rgba(var(--gray), 0.6);
+	}
+	.copyright {
+		margin-bottom: 0.5em;
+	}
 	.social-links {
 		display: flex;
 		justify-content: center;
@@ -34,5 +70,10 @@ const today = new Date();
 	}
 	.social-links a:hover {
 		color: rgb(var(--gray-dark));
+	}
+	@media (max-width: 600px) {
+		.footer-links .sep {
+			display: none;
+		}
 	}
 </style>

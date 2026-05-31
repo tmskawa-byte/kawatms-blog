@@ -336,7 +336,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--skip-image", action="store_true",
                    help="ヒーロー画像生成をスキップ（テキストだけ）")
     p.add_argument("--image-out-dir", default="",
-                   help="ヒーロー画像保存ディレクトリ override（テスト用）
+                   help="ヒーロー画像保存ディレクトリ override（テスト用）")
     return p.parse_args()
 
 

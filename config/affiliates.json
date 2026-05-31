@@ -1,0 +1,78 @@
+{
+  "__comment": "A8 提携承認後、各案件の card_html / inline_html を埋め、approved を true にする。承認前は approved=false のままで OK。承認前は記事内に <!-- 案件名 (未承認のため空欄) --> という HTML コメントが残るだけ。",
+  "hoken_square_bang": {
+    "label": "保険スクエアbang!自動車保険一括見積もり",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "insweb": {
+    "label": "インズウェブ自動車保険一括見積もり",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "carsensor_kaitori": {
+    "label": "カーセンサー（買取・車検）",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "gulliver": {
+    "label": "ガリバー（IDOM）中古車検索",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "amazon_tools": {
+    "label": "Amazon（整備工具・オイル）",
+    "approved": false,
+    "card_html": "",
+    "inline_html": "",
+    "note": "もしも経由 Amazon が現実解。A8 単独では弱い領域"
+  },
+  "rakuten_tools": {
+    "label": "楽天市場（整備用品）",
+    "approved": false,
+    "card_html": "",
+    "inline_html": "",
+    "note": "楽天アフィリエイト or もしも経由"
+  },
+  "menkyo_wakaba": {
+    "label": "合宿免許わかば",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "base_shop": {
+    "label": "BASE",
+    "approved": false,
+    "card_html": "",
+    "inline_html": "",
+    "note": "無料ユーザー登録で発火、越境EC記事の本命"
+  },
+  "conoha_wing": {
+    "label": "ConoHa WING（GMO）",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "xserver": {
+    "label": "エックスサーバー",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "rakuten_travel": {
+    "label": "楽天トラベル",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  },
+  "jalan": {
+    "label": "じゃらん",
+    "approved": false,
+    "card_html": "",
+    "inline_html": ""
+  }
+}

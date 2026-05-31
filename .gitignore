@@ -200,3 +200,4 @@ dist
 
 ### Astro ###
 .astro/
+__pycache__/

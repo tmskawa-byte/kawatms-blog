@@ -3,32 +3,124 @@ import Layout from '../layouts/BlogPost.astro';
 ---
 
 <Layout
-	title="About"
-	description="対馬モーターサービス代表 河本岳志（かわもと たけし）。長崎県対馬市の自動車整備工場で、整備・越境EC・AI API による自動化の実践記録を発信しています。"
-	pubDate={new Date('May 29 2026')}
+	title="運営者情報（About）"
+	description="対馬モーターサービス blog の運営者情報。屋号、代表者、所在地、事業内容、登録番号、SNS および当ブログの概要を記載しています。"
+	pubDate={new Date('May 31 2026')}
 >
-	<h2>河本 岳志（かわもと たけし）</h2>
 	<p>
-		長崎県対馬市で <strong>対馬モーターサービス</strong> を経営しています。
+		対馬モーターサービス blog（https://tsushima-motor.com）の運営者情報は以下のとおりです。
 	</p>
 
-	<h3>取り組んでいること</h3>
+	<h2>事業者概要</h2>
+	<table class="legal-table">
+		<tbody>
+			<tr>
+				<th>屋号</th>
+				<td>対馬モーターサービス</td>
+			</tr>
+			<tr>
+				<th>事業形態</th>
+				<td>個人事業主</td>
+			</tr>
+			<tr>
+				<th>代表者</th>
+				<td>河本 岳志（かわもと たけし）</td>
+			</tr>
+			<tr>
+				<th>所在地</th>
+				<td>長崎県対馬市</td>
+			</tr>
+			<tr>
+				<th>事業内容</th>
+				<td>
+					自動車整備業、ブログ運営および同ブログを通じた広告掲載（アフィリエイト・プログラム）、将来における越境 EC 事業
+				</td>
+			</tr>
+			<tr>
+				<th>登録</th>
+				<td>
+					適格請求書発行事業者として登録済み（インボイス制度対応）
+				</td>
+			</tr>
+			<tr>
+				<th>連絡先</th>
+				<td>
+					<a href="/contact/">お問い合わせフォーム</a><br />
+					Instagram DM：<a href="https://www.instagram.com/kawatms/" target="_blank" rel="noopener">@kawatms</a>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h2>取り組んでいる事業</h2>
 	<ul>
-		<li><strong>自動車整備業</strong>：対馬モーターサービス代表。修理・点検・車検。</li>
-		<li><strong>越境EC事業（立ち上げ中）</strong>：日本車中古パーツを eBay.com.au や BE FORWARD 経由で輸出。有人国境離島補助制度も活用。</li>
-		<li><strong>AI API による自動化（研究中）</strong>：AI API を業務に組み込み、整備工場や越境EC の現場で使える自動化を試行しています。</li>
+		<li>
+			<strong>自動車整備業</strong>：長崎県対馬市を拠点に、自動車の点検、修理、車検対応等を提供しています。
+		</li>
+		<li>
+			<strong>越境 EC 事業（準備中）</strong>：日本国内で調達した中古自動車部品を、eBay.com.au および BE FORWARD 等のプラットフォームを通じて海外に輸出する事業を準備しています。有人国境離島地域における事業者向け補助制度の活用を予定しています。
+		</li>
+		<li>
+			<strong>AI API による業務自動化（研究中）</strong>：生成 AI および各種 API を活用し、整備業務および越境 EC 業務における運営効率化を試行しています。
+		</li>
 	</ul>
 
-	<h3>SNS</h3>
+	<h2>当ブログについて</h2>
+	<p>
+		対馬モーターサービス blog は、当事業主の事業活動および実務上の検証・学習内容を、第三者にも参考になる形で記録および発信することを目的として運営しています。具体的には、自動車整備の現場から得られた知見、越境 EC 事業の立ち上げ過程、AI API を活用した業務自動化の試行、ならびに国境離島である対馬での事業活動に関する情報を扱います。
+	</p>
+	<p>
+		当サイトは、A8.net、もしもアフィリエイト、Amazon アソシエイト、楽天アフィリエイトその他のアフィリエイト・プログラムに参加し、紹介料収益を得ることがあります。広告掲載に関する方針は <a href="/affiliate-policy/">アフィリエイトポリシー</a>、個人情報および Cookie の取扱いは <a href="/privacy-policy/">プライバシーポリシー</a> をご参照ください。
+	</p>
+
+	<h2>SNS</h2>
 	<ul>
-		<li>Instagram: <a href="https://www.instagram.com/kawatms/" target="_blank" rel="noopener">@kawatms</a></li>
+		<li>Instagram：<a href="https://www.instagram.com/kawatms/" target="_blank" rel="noopener">@kawatms</a></li>
 	</ul>
 
-	<h3>このブログについて</h3>
-	<p>
-		日々の取り組みや学びを、自分の言葉でじっくり残す場所として始めました。実体験ベースで書いていきます。
-	</p>
-	<p>
-		何かあれば Instagram <a href="https://www.instagram.com/kawatms/" target="_blank" rel="noopener">@kawatms</a> までどうぞ。
-	</p>
+	<h2>関連ページ</h2>
+	<ul>
+		<li><a href="/privacy-policy/">プライバシーポリシー</a></li>
+		<li><a href="/legal/tokushou/">特定商取引法に基づく表記</a></li>
+		<li><a href="/affiliate-policy/">アフィリエイトポリシー</a></li>
+		<li><a href="/contact/">お問い合わせ</a></li>
+	</ul>
 </Layout>
+
+<style is:global>
+	.legal-table {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 1.5em 0;
+	}
+	.legal-table th,
+	.legal-table td {
+		border: 1px solid rgba(var(--gray), 0.3);
+		padding: 0.75em 1em;
+		text-align: left;
+		vertical-align: top;
+	}
+	.legal-table th {
+		width: 30%;
+		background: rgba(var(--gray-light), 0.5);
+		font-weight: 600;
+		white-space: nowrap;
+	}
+	@media (max-width: 600px) {
+		.legal-table th,
+		.legal-table td {
+			display: block;
+			width: 100%;
+			white-space: normal;
+			border: none;
+			padding: 0.5em 0.75em;
+		}
+		.legal-table th {
+			border-top: 1px solid rgba(var(--gray), 0.3);
+			background: rgba(var(--gray-light), 0.5);
+		}
+		.legal-table td {
+			border-bottom: 1px solid rgba(var(--gray), 0.2);
+		}
+	}
+</style>

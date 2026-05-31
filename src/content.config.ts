@@ -19,6 +19,9 @@ const blog = defineCollection({
 			"AI・自動化",
 			"対馬ライフ",
 		]),
+		// アフィリエイト広告（PR）を含む場合 true。
+		// 記事冒頭にステマ規制（景表法）対応の表示が挿入される。
+		containsAffiliate: z.boolean().optional().default(false),
 	}),
 });
 

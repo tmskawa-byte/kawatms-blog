@@ -8,7 +8,7 @@ import { getCategoryMeta } from '../consts';
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const { title, description, pubDate, updatedDate, heroImage, category } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, category, containsAffiliate } = Astro.props;
 const catMeta = getCategoryMeta(category);
 ---
 
@@ -68,6 +68,30 @@ const catMeta = getCategoryMeta(category);
 				background: rgba(var(--accent), 0.15);
 				color: rgb(var(--accent));
 			}
+			.affiliate-notice {
+				margin: 0 0 1.5em 0;
+				padding: 0.75em 1em;
+				border: 1px solid rgba(var(--accent), 0.35);
+				border-left: 4px solid rgb(var(--accent));
+				background: rgba(var(--accent), 0.06);
+				border-radius: 6px;
+				font-size: 0.9rem;
+				color: rgb(var(--gray-dark));
+			}
+			.affiliate-notice .label {
+				display: inline-block;
+				margin-right: 0.5em;
+				padding: 0.1em 0.5em;
+				background: rgb(var(--accent));
+				color: white;
+				border-radius: 4px;
+				font-weight: 700;
+				font-size: 0.75rem;
+				letter-spacing: 0.05em;
+			}
+			.affiliate-notice a {
+				color: rgb(var(--accent));
+			}
 		</style>
 	</head>
 
@@ -98,6 +122,12 @@ const catMeta = getCategoryMeta(category);
 						)}
 						<hr />
 					</div>
+					{containsAffiliate && (
+						<aside class="affiliate-notice" role="note">
+							<span class="label">PR</span>
+							本記事にはアフィリエイト広告が含まれます。広告掲載に関する方針は <a href="/affiliate-policy/">アフィリエイトポリシー</a> をご参照ください。
+						</aside>
+					)}
 					<slot />
 				</div>
 			</article>

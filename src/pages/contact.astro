@@ -1,0 +1,68 @@
+---
+import Layout from '../layouts/BlogPost.astro';
+---
+
+<Layout
+	title="お問い合わせ"
+	description="対馬モーターサービス blog へのお問い合わせ窓口。電子メールまたは Instagram DM にてご連絡を受け付けています。"
+	pubDate={new Date('May 31 2026')}
+>
+	<p>
+		対馬モーターサービス blog に関するお問い合わせは、以下の窓口にて受け付けています。記事の内容、広告掲載、取材、その他のお問い合わせは、いずれかの方法でご連絡ください。
+	</p>
+
+	<h2>1. 電子メールによるお問い合わせ</h2>
+	<p>
+		以下のメールアドレス宛にご連絡ください。件名にお問い合わせ内容の概要を記載いただくとスムーズです。
+	</p>
+	<p class="contact-cta">
+		<a class="mail-button" href="mailto:tmskawa@gmail.com?subject=%E5%AF%BE%E9%A6%AC%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC%E3%82%B5%E3%83%BC%E3%83%93%E3%82%B9%20blog%20%E3%81%B8%E3%81%AE%E3%81%8A%E5%95%8F%E3%81%84%E5%90%88%E3%82%8F%E3%81%9B">
+			📧 tmskawa@gmail.com にメールを送る
+		</a>
+	</p>
+	<p>
+		<small>※ ボタンが動作しない場合は、メールアドレスを直接コピーしてご利用のメールソフトに貼り付けてください。</small>
+	</p>
+
+	<h2>2. Instagram DM</h2>
+	<p>
+		Instagram のダイレクトメッセージでもご連絡を受け付けています。
+	</p>
+	<ul>
+		<li><a href="https://www.instagram.com/kawatms/" target="_blank" rel="noopener">@kawatms</a></li>
+	</ul>
+
+	<h2>3. ご連絡時のお願い</h2>
+	<ul>
+		<li>本人確認のため、お名前（必要に応じて屋号）および返信先（電子メールアドレスまたは Instagram アカウント）をお知らせください。</li>
+		<li>個別の事案の性質、内容および時期によっては、回答までお時間をいただく場合、または回答を差し控える場合があります。</li>
+		<li>営業目的、勧誘、迷惑行為等を目的としたご連絡には対応いたしません。</li>
+	</ul>
+
+	<h2>4. 個人情報の取扱いについて</h2>
+	<p>
+		お問い合わせの際にご提供いただいた個人情報（氏名、メールアドレス、お問い合わせ内容等）は、お問い合わせへの回答および付随する連絡のためにのみ利用し、利用者の同意なく第三者に提供することはありません。詳細は <a href="/privacy-policy/">プライバシーポリシー</a> をご参照ください。
+	</p>
+</Layout>
+
+<style is:global>
+	.contact-cta {
+		text-align: center;
+		margin: 1.5em 0;
+	}
+	.mail-button {
+		display: inline-block;
+		padding: 0.75em 1.5em;
+		background: rgb(var(--accent));
+		color: white !important;
+		text-decoration: none;
+		border-radius: 8px;
+		font-weight: 600;
+		transition: 0.2s ease;
+		box-shadow: var(--box-shadow);
+	}
+	.mail-button:hover {
+		filter: brightness(1.1);
+		transform: translateY(-1px);
+	}
+</style>

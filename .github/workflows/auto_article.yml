@@ -1,0 +1,131 @@
+name: Auto Article
+
+on:
+  schedule:
+    # 07:00 JST = 22:00 UTC（前日）
+    # JST 月(0) = UTC 日(0), JST 水(2) = UTC 火(2),
+    # JST 金(4) = UTC 木(4), JST 日(6) = UTC 土(6)
+    # cron DOW: 0=Sun ... 6=Sat
+    - cron: '0 22 * * 0,2,4,6'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true: .md 生成のみで PR を作らない"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      category:
+        description: "カテゴリ強制（空=曜日ロジック）"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - "整備の現場"
+          - "越境EC事業"
+          - "AI・自動化"
+          - "対馬ライフ"
+      subtopic:
+        description: "サブトピックキー強制（カテゴリと組で）"
+        required: false
+        default: ""
+      candidate:
+        description: "検索キーワード強制（直近除外 bypass）"
+        required: false
+        default: ""
+      preview_only:
+        description: "トピック決定だけ表示して即終了"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+concurrency:
+  group: kawatms-auto-article
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate article
+        id: gen
+        env:
+          CHATLLM_API_KEY: ${{ secrets.CHATLLM_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          LOG_LEVEL: INFO
+        run: |
+          args=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            args="$args --dry-run"
+          fi
+          if [ "${{ github.event.inputs.preview_only }}" = "true" ]; then
+            args="$args --preview-only"
+          fi
+          if [ -n "${{ github.event.inputs.category }}" ]; then
+            args="$args --category '${{ github.event.inputs.category }}'"
+          fi
+          if [ -n "${{ github.event.inputs.subtopic }}" ]; then
+            args="$args --subtopic '${{ github.event.inputs.subtopic }}'"
+          fi
+          if [ -n "${{ github.event.inputs.candidate }}" ]; then
+            args="$args --candidate '${{ github.event.inputs.candidate }}'"
+          fi
+          echo "Running: python scripts/generate_article.py $args"
+          # shellcheck disable=SC2086
+          eval "python scripts/generate_article.py $args"
+
+      - name: Check if article was generated
+        id: check
+        run: |
+          if [ -z "${{ steps.gen.outputs.slug }}" ]; then
+            echo "No article generated (likely Stage 1 SKIP or preview-only). Exiting."
+            echo "has_article=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_article=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: |
+          steps.check.outputs.has_article == 'true' &&
+          github.event.inputs.dry_run != 'true' &&
+          github.event.inputs.preview_only != 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/article-${{ steps.gen.outputs.slug }}
+          base: main
+          title: "[自動記事] ${{ steps.gen.outputs.title }}"
+          body: ${{ steps.gen.outputs.pr_body }}
+          labels: |
+            auto-article
+            needs-review
+          commit-message: "feat(blog): auto-generated article — ${{ steps.gen.outputs.title }}"
+          delete-branch: true
+          author: "auto-article-bot <auto-article-bot@users.noreply.github.com>"
+          committer: "auto-article-bot <auto-article-bot@users.noreply.github.com>"

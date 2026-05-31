@@ -23,16 +23,9 @@ CONFIG_PATH = os.path.join(REPO_ROOT, "config", "affiliates.json")
 # カテゴリ × サブトピック → 推奨 A8 案件キーのリスト
 # affiliate_strategy_a8net.md の Part 4 を参考に作成
 # ---------------------------------------------------------------------------
-AFFILIATE_MAP: Dict[Tuple[str, str], List[str]] = {
-    ("整備の現場", "新車情報"): ["carsensor_kaitori", "gulliver"],
-    ("整備の現場", "整備情報"): ["amazon_tools", "rakuten_tools"],
-    ("整備の現場", "道路交通法"): ["menkyo_wakaba"],
-    ("整備の現場", "新技術新TEC情報"): ["carsensor_kaitori", "gulliver"],
-    ("整備の現場", "保険"): ["hoken_square_bang", "insweb"],
-    ("越境EC事業", "_default"): ["base_shop"],
-    ("AI・自動化", "_default"): ["conoha_wing", "xserver"],
-    ("対馬ライフ", "_default"): ["rakuten_travel", "jalan"],
-}
+# Emptied during A8 media review phase. Reintroduce after approval.
+AFFILIATE_MAP: Dict[Tuple[str, str], List[str]] = {}
+
 
 # プレースホルダトークンの正規表現
 TOKEN_RE = re.compile(r"<!--\s*AFF:(CARD_\d+|INLINE_\d+)\s*-->")

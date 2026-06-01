@@ -1,5 +1,5 @@
 {
-  "friday_seibi": 0,
+  "friday_seibi": 1,
   "sunday_adhoc": 0,
   "_comment_friday": "0=道路交通法, 1=新技術新TEC, 2=保険 (mod 3)",
   "_comment_sunday": "0=越境EC事業, 1=AI・自動化, 2=対馬ライフ (mod 3)"

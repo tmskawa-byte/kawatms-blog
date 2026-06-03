@@ -33,6 +33,53 @@ TOKEN_RE = re.compile(r"<!--\s*AFF:(CARD_\d+|INLINE_\d+)\s*-->")
 # PR表記（記事冒頭に必ず挿入される文言）
 PR_NOTICE = "> ※本記事にはアフィリエイト広告（プロモーション）が含まれます。"
 
+# ---------------------------------------------------------------------------
+# 楽天市場 末尾誘導フッター (Phase A)
+# ---------------------------------------------------------------------------
+# A8 経由の楽天市場 top リンク。a8mat / a26060120254 はメディア固有の値で、
+# 案件変更時はここだけ書き換える。
+RAKUTEN_AFFILIATE_URL = (
+    "https://rpx.a8.net/svt/ejp?"
+    "a8mat=4B5LK1+3GFM7M+2HOM+686ZL"
+    "&rakuten=y"
+    "&a8ejpredirect=http%3A%2F%2Fhb.afl.rakuten.co.jp%2Fhgc%2F"
+    "0ea62065.34400275.0ea62066.204f04c0%2F"
+    "a26060120254_4B5LK1_3GFM7M_2HOM_686ZL"
+    "%3Fpc%3Dhttp%253A%252F%252Fwww.rakuten.co.jp%252F"
+    "%26m%3Dhttp%253A%252F%252Fm.rakuten.co.jp%252F"
+)
+
+# 末尾セクション (Markdown)。
+# - 見出しは `## 🛒 整備用品をチェック`
+# - リンクは `<a rel="sponsored nofollow" target="_blank">` の生 HTML を使う
+#   (Astro は `.md` でも remark+rehype 経由で raw HTML を許可するため安全)
+# - 景品表示法のステマ規制対応として「アフィリエイト広告」を明示
+RAKUTEN_FOOTER_MD = (
+    "## 🛒 整備用品をチェック\n"
+    "\n"
+    "記事で紹介した工具・ケミカルの実物は楽天市場でチェックできます。\n"
+    "\n"
+    f'👉 <a href="{RAKUTEN_AFFILIATE_URL}" '
+    'rel="sponsored nofollow" target="_blank">楽天市場で整備用品を見る</a>\n'
+    "\n"
+    "※ アフィリエイト広告：購入により当ブログに紹介料が発生する場合があります。\n"
+)
+
+
+def append_rakuten_footer(body_markdown: str) -> str:
+    """記事末尾に楽天市場誘導フッターを付与。
+
+    既に同セクション（`rpx.a8.net` を含む or 見出し文言）が含まれていたら
+    二重挿入を避けてそのまま返す。Stage 2 の生成物に対しても安全。
+    """
+    if "rpx.a8.net" in body_markdown:
+        return body_markdown
+    if "整備用品をチェック" in body_markdown:
+        return body_markdown
+    return body_markdown.rstrip() + "\n\n" + RAKUTEN_FOOTER_MD
+
+
+
 
 # ---------------------------------------------------------------------------
 # Config IO

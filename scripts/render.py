@@ -16,7 +16,7 @@ import unicodedata
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-from scripts.affiliates import prepend_pr_notice, replace_tokens
+from scripts.affiliates import append_rakuten_footer, prepend_pr_notice, replace_tokens
 
 LOG = logging.getLogger(__name__)
 
@@ -131,8 +131,11 @@ def render_article(
     # 1. アフィリエイト置換
     body_replaced, used_labels = replace_tokens(body_markdown, category, subtopic_key)
 
+    # 1.5 楽天市場 末尾誘導フッターを付与（Phase A: 全記事一律）
+    body_with_footer = append_rakuten_footer(body_replaced)
+
     # 2. PR 表記を冒頭に強制挿入
-    body_final = prepend_pr_notice(body_replaced)
+    body_final = prepend_pr_notice(body_with_footer)
 
     # 3. frontmatter + 本文を結合
     fm = build_frontmatter(title, description, pub_dt, category, hero_image_url)

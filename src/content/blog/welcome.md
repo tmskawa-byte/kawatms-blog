@@ -21,3 +21,11 @@ category: '対馬ライフ'
 SNS では流れが速く、まとまった情報を残しにくいので、あとから自分でも読み返したい話や、誰かの参考になりそうな実体験を、じっくり残せる場所として始めました。
 
 更新は不定期ですが、実体験ベースで書いていきます。よろしくお願いします。
+
+## 🛒 整備用品をチェック
+
+記事で紹介した工具・ケミカルの実物は楽天市場でチェックできます。
+
+👉 <a href="https://rpx.a8.net/svt/ejp?a8mat=4B5LK1+3GFM7M+2HOM+686ZL&rakuten=y&a8ejpredirect=http%3A%2F%2Fhb.afl.rakuten.co.jp%2Fhgc%2F0ea62065.34400275.0ea62066.204f04c0%2Fa26060120254_4B5LK1_3GFM7M_2HOM_686ZL%3Fpc%3Dhttp%253A%252F%252Fwww.rakuten.co.jp%252F%26m%3Dhttp%253A%252F%252Fm.rakuten.co.jp%252F" rel="sponsored nofollow" target="_blank">楽天市場で整備用品を見る</a>
+
+※ アフィリエイト広告：購入により当ブログに紹介料が発生する場合があります。

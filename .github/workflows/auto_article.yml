@@ -2,11 +2,10 @@ name: Auto Article
 
 on:
   schedule:
-    # 07:00 JST = 22:00 UTC（前日）
-    # JST 月(0) = UTC 日(0), JST 水(2) = UTC 火(2),
-    # JST 金(4) = UTC 木(4), JST 日(6) = UTC 土(6)
-    # cron DOW: 0=Sun ... 6=Sat
-    - cron: '0 22 * * 0,2,4,6'
+    # 2026-06-07 pivot: 毎日 07:00 JST = 22:00 UTC（前日）に変更
+    # 旧: '0 22 * * 0,2,4,6' (月水金日 = JST月水金日)
+    # 新: 毎日 1 本、整備の現場 7 サブテーマを曜日固定ローテで投稿
+    - cron: '0 22 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -128,4 +127,4 @@ jobs:
           commit-message: "feat(blog): auto-generated article — ${{ steps.gen.outputs.title }}"
           delete-branch: true
           author: "auto-article-bot <auto-article-bot@users.noreply.github.com>"
-          committer: "auto-article-bot <auto-article-bot@users.noreply.github.com>"
+          committer: "auto-article-bot <aut

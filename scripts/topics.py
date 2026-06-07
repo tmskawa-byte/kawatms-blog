@@ -4,14 +4,20 @@ Topics, subtopics, weekday → category routing.
 kawatms-blog はカテゴリ4種固定:
     整備の現場 / 越境EC事業 / AI・自動化 / 対馬ライフ
 
-投稿スケジュール (JST):
-    月 → 整備の現場 - 新車情報
-    水 → 整備の現場 - 整備情報
-    金 → 整備の現場 - [道路交通法 / 新技術新TEC / 保険] ローテ
-    日 → 整備の現場 - 5 サブテーマローテ (SEIBI_ROTATION)
-          ※ シーディング期間中の一時設定。A8 等のアフィリエイト承認後、
-            アドホック [越境EC / AI / 対馬ライフ] 復元時は
-            determine_topic() の weekday==6 分岐を SUNDAY_ROTATION 利用に戻す。
+投稿スケジュール (JST) — 2026-06-07 pivot:
+    毎日 07:00 JST 投稿、整備の現場 7 サブテーマ曜日固定ローテ
+    月 → 整備の現場 - 新車情報            (#1)
+    火 → 整備の現場 - 整備情報            (#2)
+    水 → 整備の現場 - 道路交通法          (#3)
+    木 → 整備の現場 - 新技術新TEC情報     (#4)
+    金 → 整備の現場 - 保険               (#5)
+    土 → 整備の現場 - リコール情報        (#6)
+    日 → 整備の現場 - 事故の判例          (#7)
+
+旧仕様メモ:
+    旧 cron: 月水金日 (4日/週)、金=道交法/新技術/保険ローテ、日=5サブテーマローテ
+    旧アドホック (越境EC / AI / 対馬ライフ) は SUNDAY_ROTATION に残置。
+    将来復元する場合は determine_topic() を旧版に戻し、cron を 0,2,4,6 に戻す。
 """
 from __future__ import annotations
 
@@ -53,6 +59,64 @@ AUTO_DOMAINS: List[str] = [
     "driver-web.jp",            # ドライバーWeb (八重洲出版) - 専門誌系
     "minkara.carview.co.jp",    # みんカラ - 整備手帳・パーツレビュー
     "soumu.go.jp",              # 総務省 - 道路交通関連法令
+]
+
+# ---------------------------------------------------------------------------
+# 2026-06-07 追加: per-subtopic 拡張用ドメインリスト
+# ---------------------------------------------------------------------------
+# 政府公式縛りやめて日本ソース広めに。AUTO_DOMAINS と合成して各サブテーマで使う。
+MAKER_DOMAINS: List[str] = [
+    "toyota.jp",
+    "nissan.co.jp",
+    "honda.co.jp",
+    "mazda.co.jp",
+    "subaru.jp",
+    "suzuki.co.jp",
+    "daihatsu.co.jp",
+    "global.toyota",        # トヨタ グローバルニュース日本語版
+    "lexus.jp",
+    "mitsubishi-motors.co.jp",
+]
+
+# 保険系: 業界団体 + 大手ダイレクト型・代理店型公式
+INSURANCE_DOMAINS: List[str] = [
+    "sonpo.or.jp",                       # 日本損害保険協会
+    "jihi-hokenrengoukai.or.jp",         # 自賠責保険連合会
+    "tokiomarine-nichido.co.jp",
+    "sompo-japan.co.jp",
+    "ms-ins.com",                        # 三井住友海上
+    "aioinissaydowa.co.jp",
+    "axa-direct.co.jp",
+    "sonysonpo.co.jp",
+    "saisonjidousha.com",
+    "rakuten-ins.co.jp",
+]
+
+# 法律・弁護士系: 道路交通法・事故判例解説
+LAW_DOMAINS: List[str] = [
+    "bengo4.com",                # 弁護士ドットコム
+    "lawyers.coconala.com",      # ココナラ法律相談
+    "atombengo.com",             # アトム法律事務所
+    "vbest.jp",                  # ベリーベスト法律事務所
+    "best-legal.jp",
+    "jiko-pro.com",              # 交通事故解決ナビ
+    "ben54.jp",
+]
+
+# 判例検索・裁判所系: 事故判例
+PRECEDENT_DOMAINS: List[str] = [
+    "courts.go.jp",              # 裁判所
+    "minemurabengoshi.jp",
+    "nibengo.com",
+    "n-legal.co.jp",
+]
+
+# 全国紙: リコール・判例の信頼性ソース
+NEWSPAPER_DOMAINS: List[str] = [
+    "nikkei.com",
+    "asahi.com",
+    "yomiuri.co.jp",
+    "mainichi.jp",
 ]
 
 # 越境EC事業 / AI・自動化用 — IT・ビジネスメディア
@@ -106,7 +170,7 @@ SEIBI_SUBTOPICS: Dict[str, Dict] = {
             "新型 軽トラック",
             "フルモデルチェンジ 国産",
         ],
-        "domains": AUTO_DOMAINS,
+        "domains": AUTO_DOMAINS + MAKER_DOMAINS,
         "extra_query": "新型 発売 国産",
     },
     "整備情報": {
@@ -127,7 +191,7 @@ SEIBI_SUBTOPICS: Dict[str, Dict] = {
             "12ヶ月点検 法定",
             "スパークプラグ 交換",
         ],
-        "domains": AUTO_DOMAINS,
+        "domains": AUTO_DOMAINS,  # AUTO_DOMAINS に jaf.or.jp / goo-net.com / minkara 等あり既に広め
         "extra_query": "整備 メンテナンス",
     },
     "道路交通法": {
@@ -148,7 +212,7 @@ SEIBI_SUBTOPICS: Dict[str, Dict] = {
             "シートベルト 違反",
             "チャイルドシート 法律",
         ],
-        "domains": AUTO_DOMAINS,
+        "domains": AUTO_DOMAINS + LAW_DOMAINS,
         "extra_query": "罰則 違反点数 警察庁",
     },
     "新技術新TEC情報": {
@@ -169,7 +233,7 @@ SEIBI_SUBTOPICS: Dict[str, Dict] = {
             "リサイクル素材 自動車",
             "5G コネクテッドカー",
         ],
-        "domains": AUTO_DOMAINS,
+        "domains": AUTO_DOMAINS + MAKER_DOMAINS,
         "extra_query": "新技術",
     },
     "保険": {
@@ -190,17 +254,77 @@ SEIBI_SUBTOPICS: Dict[str, Dict] = {
             "免責金額 設定",
             "自動車保険 解約 タイミング",
         ],
-        "domains": AUTO_DOMAINS,
+        "domains": AUTO_DOMAINS + INSURANCE_DOMAINS + LAW_DOMAINS,
         "extra_query": "任意保険 自動車保険",
+    },
+    # ---------------------------------------------------------------------
+    # 2026-06-07 追加: pivot で 5→7 サブテーマ拡張
+    # ---------------------------------------------------------------------
+    "リコール情報": {
+        "candidates": [
+            "リコール 国土交通省 トヨタ",
+            "リコール 国土交通省 日産",
+            "リコール 国土交通省 ホンダ",
+            "リコール 国土交通省 マツダ",
+            "リコール 国土交通省 スバル",
+            "リコール 国土交通省 スズキ",
+            "リコール 国土交通省 ダイハツ",
+            "リコール 軽自動車",
+            "リコール ハイブリッド",
+            "リコール EV 電気自動車",
+            "リコール エアバッグ",
+            "リコール ブレーキ",
+            "リコール 燃料 装置",
+            "リコール 届出 メーカー",
+            "リコール 改善対策 サービスキャンペーン",
+        ],
+        "domains": AUTO_DOMAINS + MAKER_DOMAINS + NEWSPAPER_DOMAINS,
+        "extra_query": "リコール 届出",
+    },
+    "事故の判例": {
+        "candidates": [
+            "交通事故 判例 過失割合",
+            "交通事故 裁判例 損害賠償",
+            "追突事故 過失割合 判例",
+            "右折 直進 事故 過失割合",
+            "自転車 自動車 事故 判例",
+            "歩行者 横断歩道 事故 判例",
+            "高速道路 事故 判例",
+            "駐車場 事故 過失割合",
+            "信号無視 事故 判例",
+            "飲酒運転 事故 損害賠償",
+            "あおり運転 損害賠償 判例",
+            "ながら運転 事故 判例",
+            "高齢運転者 事故 判例",
+            "整備不良 事故 責任",
+            "車検切れ 事故 保険",
+        ],
+        "domains": PRECEDENT_DOMAINS + LAW_DOMAINS + NEWSPAPER_DOMAINS,
+        "extra_query": "判例 過失割合 損害賠償",
     },
 }
 
-# 金曜日 整備の現場 ローテーション順
+# ---------------------------------------------------------------------------
+# 2026-06-07 pivot: 曜日固定ローテーション (整備の現場 7 サブテーマ)
+# ---------------------------------------------------------------------------
+# Python の datetime.weekday(): 0=月, 1=火, ..., 6=日
+WEEKDAY_SEIBI_MAP: Dict[int, str] = {
+    0: "新車情報",       # 月
+    1: "整備情報",       # 火
+    2: "道路交通法",     # 水
+    3: "新技術新TEC情報", # 木
+    4: "保険",          # 金
+    5: "リコール情報",   # 土
+    6: "事故の判例",     # 日
+}
+
+# ---------------------------------------------------------------------------
+# 旧仕様残置 (2026-06-07 までは現役だったローテ。将来復元用に残しておく)
+# ---------------------------------------------------------------------------
+# 旧 金曜日 整備の現場 ローテーション順
 FRIDAY_ROTATION = ["道路交通法", "新技術新TEC情報", "保険"]
 
-# 日曜日 整備の現場 シーディング期間中ローテーション順 (2026-05-31 追加)
-#   月: 新車情報 / 水: 整備情報 / 金: 道交法-新技術-保険 のローテ
-#   と組み合わせて、日曜は 5 サブテーマを満遍なく回す
+# 旧 日曜日 整備の現場 シーディング期間中ローテーション順
 SEIBI_ROTATION = [
     "新車情報",
     "整備情報",
@@ -209,9 +333,9 @@ SEIBI_ROTATION = [
     "保険",
 ]
 
-# 日曜日 アドホックカテゴリ ローテーション順 (A8 等アフィリエイト承認後の復元用)
-#   シーディング期間中は SEIBI_ROTATION を使用、本配列は復元用として残置。
-#   復元手順: determine_topic() の weekday==6 分岐を旧版に戻すだけで OK。
+# 旧 日曜日 アドホックカテゴリ ローテーション順
+#   A8 等アフィリエイト承認後の復元用として残置。新方式 (毎日 7 サブテーマ) に
+#   含まれていないので、復元時は determine_topic() を旧版に戻す必要あり。
 SUNDAY_ROTATION = ["越境EC事業", "AI・自動化", "対馬ライフ"]
 
 # 越境EC事業 サブトピック
@@ -390,26 +514,19 @@ def determine_topic(
 ) -> Tuple[str, str, Dict]:
     """
     weekday: 0=月, 1=火, ..., 6=日 (Python の datetime.weekday() 準拠)
-    friday_index, sunday_index: ローテーション state
+
+    2026-06-07 pivot 以降は曜日固定ローテ。WEEKDAY_SEIBI_MAP を引くだけ。
+    friday_index / sunday_index は旧仕様との後方互換のため引数に残しているが
+    新ロジックでは参照しない（呼び出し側を変えずに済むため）。
 
     Returns: (category, subtopic_key, subtopic_meta_dict)
-        subtopic_meta_dict は CATEGORY_SUBTOPICS[category][subtopic_key] の中身
+        subtopic_meta_dict は SEIBI_SUBTOPICS[subtopic_key] の中身
         (candidates / domains / extra_query を持つ)
     """
-    if weekday == 0:    # 月
-        return "整備の現場", "新車情報", SEIBI_SUBTOPICS["新車情報"]
-    elif weekday == 2:  # 水
-        return "整備の現場", "整備情報", SEIBI_SUBTOPICS["整備情報"]
-    elif weekday == 4:  # 金
-        sub_key = FRIDAY_ROTATION[friday_index % len(FRIDAY_ROTATION)]
-        return "整備の現場", sub_key, SEIBI_SUBTOPICS[sub_key]
-    elif weekday == 6:  # 日 (シーディング期間中: 整備の現場 5 サブテーマローテ)
-        sub_key = SEIBI_ROTATION[sunday_index % len(SEIBI_ROTATION)]
-        return "整備の現場", sub_key, SEIBI_SUBTOPICS[sub_key]
-    else:
-        # 火・木・土。cron は組まれていないが手動 run 用にフォールバック。
-        # デフォルトで「整備の現場」「整備情報」を返す。
-        return "整備の現場", "整備情報", SEIBI_SUBTOPICS["整備情報"]
+    sub_key = WEEKDAY_SEIBI_MAP.get(weekday, "整備情報")
+    if sub_key not in SEIBI_SUBTOPICS:
+        sub_key = "整備情報"
+    return "整備の現場", sub_key, SEIBI_SUBTOPICS[sub_key]
 
 
 def build_query(category: str, subtopic_key: str, candidate: str) -> str:

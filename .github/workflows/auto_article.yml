@@ -127,4 +127,4 @@ jobs:
           commit-message: "feat(blog): auto-generated article — ${{ steps.gen.outputs.title }}"
           delete-branch: true
           author: "auto-article-bot <auto-article-bot@users.noreply.github.com>"
-          committer: "auto-article-bot <aut
+          committer: "auto-article-bot <auto-article-bot@users.noreply.github.com>"

@@ -35,7 +35,7 @@ export const BUSINESS_INFO = {
 	legalName: "対馬モーターサービス（個人事業主）",
 	url: SITE_URL,
 	logo: `${SITE_URL}/og.jpg`,
-	telephone: "+81-920-52-0158",
+	telephone: "0920-52-0158",
 	priceRange: "¥¥",
 	postalCode: "817-0016",
 	streetAddress: "厳原町東里62-1",

@@ -30,34 +30,38 @@ export const CATEGORIES = [
 ] as const;
 
 // 業務情報（LocalBusiness / AutoRepair 構造化データ用）
-// TODO 項目はケンちゃんが正確値を確認して埋める運用。
 export const BUSINESS_INFO = {
 	name: "対馬モーターサービス",
 	legalName: "対馬モーターサービス（個人事業主）",
 	url: SITE_URL,
 	logo: `${SITE_URL}/og.jpg`,
-	telephone: "+81-XXXX-XX-XXXX", // TODO: ケンちゃんに確認
+	telephone: "+81-920-52-0158",
 	priceRange: "¥¥",
-	postalCode: "817-XXXX", // TODO
-	streetAddress: "（番地）", // TODO
+	postalCode: "817-0016",
+	streetAddress: "厳原町東里62-1",
 	addressLocality: "対馬市",
 	addressRegion: "長崎県",
 	addressCountry: "JP",
-	latitude: 34.2, // TODO: 正確値
-	longitude: 129.29, // TODO
+	// 緯度経度は Google マップ URL からの正確値取得が後続作業。住所ベースの概算値で暫定設定。
+	// Google マップ URL: https://maps.app.goo.gl/eURgAs65Bes7KBeNA?g_st=ic
+	latitude: 34.2,
+	longitude: 129.29,
 	openingHours: [
 		{
-			days: [
-				"Monday",
-				"Tuesday",
-				"Wednesday",
-				"Thursday",
-				"Friday",
-				"Saturday",
-			],
+			days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
 			opens: "08:30",
-			closes: "18:00",
-		}, // TODO: 土曜と終業確認
+			closes: "17:30",
+		},
+		{
+			days: ["Saturday", "Sunday"],
+			opens: "08:30",
+			closes: "12:00",
+		}, // 土日 午前中営業
+		{
+			days: "PublicHolidays",
+			opens: "00:00",
+			closes: "00:00",
+		}, // 祝日休み（営業時間ゼロ）
 	],
 	sameAs: [
 		"https://www.instagram.com/kawatms",

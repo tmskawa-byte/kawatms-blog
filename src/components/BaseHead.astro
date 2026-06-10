@@ -45,7 +45,11 @@ const localBusinessSchema = {
 	},
 	openingHoursSpecification: BUSINESS_INFO.openingHours.map((spec) => ({
 		'@type': 'OpeningHoursSpecification',
-		dayOfWeek: spec.days,
+		// days が string（"PublicHolidays"）の場合は schema.org URL に、配列の場合はそのまま列挙
+		dayOfWeek:
+			typeof spec.days === 'string'
+				? `https://schema.org/${spec.days}`
+				: spec.days,
 		opens: spec.opens,
 		closes: spec.closes,
 	})),

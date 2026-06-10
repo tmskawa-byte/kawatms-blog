@@ -21,6 +21,8 @@ export async function getStaticPaths() {
 
 const { category, posts } = Astro.props;
 const meta = getCategoryMeta(category.name)!;
+
+const getPostUrl = (post: (typeof posts)[number]) => `/blog/${post.data.slug ?? post.id}/`;
 ---
 
 <!doctype html>
@@ -105,7 +107,7 @@ const meta = getCategoryMeta(category.name)!;
 				<ul class="posts">
 					{posts.map((post) => (
 						<li>
-							<a href={`/blog/${post.id}/`}>
+							<a href={getPostUrl(post)}>
 								<h2 class="title">{post.data.title}</h2>
 								<p class="date">
 									<FormattedDate date={post.data.pubDate} />

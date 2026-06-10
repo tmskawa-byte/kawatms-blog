@@ -42,10 +42,9 @@ export const BUSINESS_INFO = {
 	addressLocality: "対馬市",
 	addressRegion: "長崎県",
 	addressCountry: "JP",
-	// 緯度経度は Google マップ URL からの正確値取得が後続作業。住所ベースの概算値で暫定設定。
-	// Google マップ URL: https://maps.app.goo.gl/eURgAs65Bes7KBeNA?g_st=ic
-	latitude: 34.2,
-	longitude: 129.29,
+	// Google マップで「対馬モーターサービス」の正確な座標
+	latitude: 34.2173745,
+	longitude: 129.2923812,
 	openingHours: [
 		{
 			days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],

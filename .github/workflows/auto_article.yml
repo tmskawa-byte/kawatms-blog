@@ -43,6 +43,14 @@ on:
         options:
           - "false"
           - "true"
+      auto_merge:
+        description: "true: PR 作成後に build 確認して自動マージする"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 concurrency:
   group: kawatms-auto-article
@@ -111,6 +119,7 @@ jobs:
           fi
 
       - name: Create Pull Request
+        id: cpr
         if: |
           steps.check.outputs.has_article == 'true' &&
           github.event.inputs.dry_run != 'true' &&
@@ -128,3 +137,32 @@ jobs:
           delete-branch: true
           author: "auto-article-bot <auto-article-bot@users.noreply.github.com>"
           committer: "auto-article-bot <auto-article-bot@users.noreply.github.com>"
+
+      - name: Set up Node.js 22
+        if: |
+          steps.cpr.outputs.pull-request-number != '' &&
+          (github.event_name == 'schedule' || github.event.inputs.auto_merge == 'true')
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Build generated article
+        if: |
+          steps.cpr.outputs.pull-request-number != '' &&
+          (github.event_name == 'schedule' || github.event.inputs.auto_merge == 'true')
+        run: |
+          npm ci
+          npm run build
+
+      - name: Merge generated article
+        if: |
+          steps.cpr.outputs.pull-request-number != '' &&
+          (github.event_name == 'schedule' || github.event.inputs.auto_merge == 'true')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" \
+            --squash \
+            --delete-branch \
+            --subject "feat(blog): auto-generated article — ${{ steps.gen.outputs.title }}"

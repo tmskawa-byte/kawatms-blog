@@ -333,6 +333,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out-dir", default="",
                    help="出力ディレクトリ override（テスト用）")
     p.add_argument("--max-tavily-results", type=int, default=10)
+    p.add_argument("--max-stage1-attempts", type=int, default=4,
+                   help="Stage 1 が SKIP した場合に別 candidate で再試行する最大回数")
     p.add_argument("--skip-image", action="store_true",
                    help="ヒーロー画像生成をスキップ（テキストだけ）")
     p.add_argument("--image-out-dir", default="",
@@ -412,46 +414,80 @@ def main() -> int:
         write_gh_output("candidate", candidate)
         return 0
 
-    # ----- 3. Tavily search -----
-    try:
-        tavily = TavilyClient()
-        query = build_query(category, subtopic_key, candidate)
-        LOG.info("Tavily query: %s", query)
-        articles = tavily.search(
-            query=query,
-            topic="news",
-            max_results=args.max_tavily_results,
-            days=180,
-            include_domains=meta["domains"],
-        )
-    except TavilyError as e:
-        LOG.error("Tavily failure: %s", e)
-        return 3
-    LOG.info("Got %d article(s)", len(articles))
-
-    # ----- 4. Stage 1 -----
     chatllm = ChatLLMClient()
     recent_block = format_recent_subtopics_for_prompt(history)
-    user_input_1 = format_articles_for_llm(
-        articles, category, subtopic_key, candidate,
-        recent_posts_block=recent_block,
-    )
-    try:
-        LOG.info("Stage 1 (research memo) starting...")
-        memo = chatllm.chat(
-            model=TEXT_MODEL,
-            system=STAGE1_SYSTEM_PROMPT,
-            user=user_input_1,
-            timeout=240,
-        )
-    except ChatLLMError as e:
-        LOG.error("Stage 1 failed: %s", e)
-        return 4
-    LOG.info("Stage 1 length: %d", len(memo))
-    LOG.info("Stage 1 head: %s", memo[:200].replace("\n", " "))
+    max_attempts = 1 if args.candidate else max(1, args.max_stage1_attempts)
+    tried_candidates: List[str] = []
+    articles: List[Dict[str, Any]] = []
+    memo = ""
 
-    if is_skip(memo):
-        LOG.warning("Stage 1 returned SKIP. memo=%r", memo[:200])
+    for attempt in range(1, max_attempts + 1):
+        if attempt > 1:
+            remaining = [c for c in meta["candidates"] if c not in tried_candidates]
+            if not remaining:
+                LOG.warning("No remaining candidates for Stage 1 retry.")
+                break
+            candidate = pick_candidate_with_dedup(remaining, history, rng)
+            LOG.info("Retry candidate: %s", candidate)
+        tried_candidates.append(candidate)
+
+        # ----- 3. Tavily search -----
+        try:
+            tavily = TavilyClient()
+            query = build_query(category, subtopic_key, candidate)
+            LOG.info("Tavily query (attempt %d/%d): %s", attempt, max_attempts, query)
+            articles = tavily.search(
+                query=query,
+                topic="news",
+                max_results=args.max_tavily_results,
+                days=180,
+                include_domains=meta["domains"],
+            )
+        except TavilyError as e:
+            LOG.error("Tavily failure: %s", e)
+            return 3
+        LOG.info("Got %d article(s)", len(articles))
+
+        # ----- 4. Stage 1 -----
+        user_input_1 = format_articles_for_llm(
+            articles, category, subtopic_key, candidate,
+            recent_posts_block=recent_block,
+        )
+        try:
+            LOG.info("Stage 1 (research memo) starting...")
+            memo = chatllm.chat(
+                model=TEXT_MODEL,
+                system=STAGE1_SYSTEM_PROMPT,
+                user=user_input_1,
+                timeout=240,
+            )
+        except ChatLLMError as e:
+            LOG.error("Stage 1 failed: %s", e)
+            return 4
+        LOG.info("Stage 1 length: %d", len(memo))
+        LOG.info("Stage 1 head: %s", memo[:200].replace("\n", " "))
+
+        if not is_skip(memo):
+            break
+
+        skip_head = memo.strip().splitlines()[0] if memo.strip() else "SKIP"
+        LOG.warning(
+            "Stage 1 returned SKIP on attempt %d/%d. candidate=%r reason=%r",
+            attempt,
+            max_attempts,
+            candidate,
+            skip_head,
+        )
+        write_gh_output("skip_reason", skip_head)
+
+    if not memo or is_skip(memo):
+        summary = (
+            "### Auto Article skipped\n\n"
+            f"- category: {category}\n"
+            f"- subtopic_key: {subtopic_key}\n"
+            f"- tried_candidates: {', '.join(tried_candidates) if tried_candidates else '(none)'}\n"
+        )
+        write_gh_summary(summary)
         return 0
 
     # ----- 5. Stage 2 -----

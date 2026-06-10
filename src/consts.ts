@@ -29,6 +29,53 @@ export const CATEGORIES = [
 	},
 ] as const;
 
+// 業務情報（LocalBusiness / AutoRepair 構造化データ用）
+export const BUSINESS_INFO = {
+	name: "対馬モーターサービス",
+	legalName: "対馬モーターサービス（個人事業主）",
+	url: SITE_URL,
+	logo: `${SITE_URL}/og.jpg`,
+	telephone: "0920-52-0158",
+	priceRange: "¥¥",
+	postalCode: "817-0016",
+	streetAddress: "厳原町東里62-1",
+	addressLocality: "対馬市",
+	addressRegion: "長崎県",
+	addressCountry: "JP",
+	// Google マップで「対馬モーターサービス」の正確な座標
+	latitude: 34.2173745,
+	longitude: 129.2923812,
+	openingHours: [
+		{
+			days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+			opens: "08:30",
+			closes: "17:30",
+		},
+		{
+			days: ["Saturday", "Sunday"],
+			opens: "08:30",
+			closes: "12:00",
+		}, // 土日 午前中営業
+		{
+			days: "PublicHolidays",
+			opens: "00:00",
+			closes: "00:00",
+		}, // 祝日休み（営業時間ゼロ）
+	],
+	sameAs: [
+		"https://www.instagram.com/kawatms",
+		"https://www.threads.net/@kawatms",
+	],
+	services: [
+		"車検",
+		"自動車整備",
+		"タイヤ交換",
+		"オイル交換",
+		"鈑金塗装",
+		"中古車買取",
+	],
+} as const;
+
 export type CategoryName = (typeof CATEGORIES)[number]["name"];
 
 export function getCategoryMeta(name: string) {

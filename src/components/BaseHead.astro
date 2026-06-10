@@ -2,6 +2,7 @@
 // Import the global.css file here so that it is included on
 // all pages through the use of the <BaseHead /> component.
 import '../styles/global.css';
+import { BUSINESS_INFO } from '../consts';
 
 interface Props {
 	title: string;
@@ -12,6 +13,55 @@ interface Props {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
 const { title, description, image = '/blog-placeholder-1.jpg' } = Astro.props;
+
+// LocalBusiness（AutoRepair）構造化データ — 全ページの <head> に注入
+const localBusinessSchema = {
+	'@context': 'https://schema.org',
+	'@type': 'AutoRepair',
+	'@id': `${BUSINESS_INFO.url}/#business`,
+	name: BUSINESS_INFO.name,
+	legalName: BUSINESS_INFO.legalName,
+	url: BUSINESS_INFO.url,
+	logo: BUSINESS_INFO.logo,
+	image: BUSINESS_INFO.logo,
+	telephone: BUSINESS_INFO.telephone,
+	priceRange: BUSINESS_INFO.priceRange,
+	address: {
+		'@type': 'PostalAddress',
+		postalCode: BUSINESS_INFO.postalCode,
+		streetAddress: BUSINESS_INFO.streetAddress,
+		addressLocality: BUSINESS_INFO.addressLocality,
+		addressRegion: BUSINESS_INFO.addressRegion,
+		addressCountry: BUSINESS_INFO.addressCountry,
+	},
+	geo: {
+		'@type': 'GeoCoordinates',
+		latitude: BUSINESS_INFO.latitude,
+		longitude: BUSINESS_INFO.longitude,
+	},
+	areaServed: {
+		'@type': 'AdministrativeArea',
+		name: '長崎県対馬市',
+	},
+	openingHoursSpecification: BUSINESS_INFO.openingHours.map((spec) => ({
+		'@type': 'OpeningHoursSpecification',
+		// days が string（"PublicHolidays"）の場合は schema.org URL に、配列の場合はそのまま列挙
+		dayOfWeek:
+			typeof spec.days === 'string'
+				? `https://schema.org/${spec.days}`
+				: spec.days,
+		opens: spec.opens,
+		closes: spec.closes,
+	})),
+	sameAs: BUSINESS_INFO.sameAs,
+	makesOffer: BUSINESS_INFO.services.map((service) => ({
+		'@type': 'Offer',
+		itemOffered: {
+			'@type': 'Service',
+			name: service,
+		},
+	})),
+};
 ---
 
 <!-- Global Metadata -->
@@ -45,3 +95,6 @@ const { title, description, image = '/blog-placeholder-1.jpg' } = Astro.props;
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image, Astro.url)} />
+
+<!-- JSON-LD: LocalBusiness (AutoRepair) -->
+<script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema)} />

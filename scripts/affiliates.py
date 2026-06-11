@@ -12,12 +12,13 @@ import logging
 import os
 import random
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 LOG = logging.getLogger(__name__)
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(REPO_ROOT, "config", "affiliates.json")
+CATALOG_PATH = os.path.join(REPO_ROOT, "config", "affiliate_catalog.yaml")
 
 # ---------------------------------------------------------------------------
 # カテゴリ × サブトピック → 推奨 A8 案件キーのリスト
@@ -232,3 +233,153 @@ def prepend_pr_notice(body_markdown: str) -> str:
     if "アフィリエイト" in head_text and ("プロモーション" in head_text or "PR" in head_text):
         return body_markdown
     return PR_NOTICE + "\n\n" + body_markdown.lstrip()
+
+
+# ===========================================================================
+# 本文中インラインアフィリエイト（config/affiliate_catalog.yaml）
+# ===========================================================================
+# HANDOFF: 記事本文の H2 セクション内に関連商品リンクを 1〜2 個、自然に挿入する。
+# 既存の末尾 AFF トークン / 楽天フッターとは独立した経路。
+#
+# 制約（絶対遵守）: 保険・金融・投資・FX・暗号資産・自動車保険一括見積もり、
+# 楽天損保 / 楽天証券 / 楽天カード等の金融系は出さない。カタログ側でも除外して
+# いるが、ここでも denylist で二重チェックし、混入を物理的に防ぐ。
+
+# 禁止語（title / tags / categories / url / affiliate を結合した文字列に対して
+# 部分一致で判定）。誤検出を避けるため意味が一意に金融・保険に寄る語に限定。
+INLINE_AFFILIATE_DENYLIST: Tuple[str, ...] = (
+    "保険",
+    "生命保険",
+    "自動車保険",
+    "損保",
+    "一括見積",
+    "投資",
+    "投信",
+    "証券",
+    "fx",
+    "暗号資産",
+    "仮想通貨",
+    "カードローン",
+    "クレジットカード",
+    "キャッシング",
+    "ローン",
+    "金融",
+    "銀行",
+    "bot",
+    "楽天カード",
+    "楽天証券",
+    "楽天損保",
+    "楽天銀行",
+)
+
+# インライン挿入フォーマット。景表法対応で rel="sponsored nofollow" を付ける。
+_INLINE_FMT = (
+    '\n\n💡 こちらもどうぞ：'
+    '<a href="{url}" rel="sponsored nofollow" target="_blank">{title}</a>\n'
+)
+
+
+def _catalog_text_blob(item: Dict[str, Any]) -> str:
+    """compliance 判定用に item のテキスト要素を 1 本に結合（小文字化）。"""
+    parts: List[str] = [
+        str(item.get("title", "")),
+        str(item.get("url", "")),
+        str(item.get("affiliate", "")),
+    ]
+    parts.extend(str(t) for t in (item.get("tags") or []))
+    parts.extend(str(c) for c in (item.get("categories") or []))
+    return " ".join(parts).lower()
+
+
+def is_compliant_affiliate(item: Dict[str, Any]) -> bool:
+    """禁止語を 1 つでも含む案件は不採用（保険・金融・投資系の混入防止）。"""
+    blob = _catalog_text_blob(item)
+    for bad in INLINE_AFFILIATE_DENYLIST:
+        if bad in blob:
+            LOG.warning(
+                "Inline affiliate rejected by denylist (%r): %s",
+                bad, item.get("title", "(no title)"),
+            )
+            return False
+    return True
+
+
+def load_affiliate_catalog(path: str = CATALOG_PATH) -> List[Dict[str, Any]]:
+    """affiliate_catalog.yaml を読み込み、制約準拠の案件だけ返す。
+
+    PyYAML は遅延 import。未インストール / 読み込み失敗時は空リストにフォール
+    バックし、インラインアフィ機能だけを無効化する（パイプライン全体は止めない）。
+    """
+    if not os.path.exists(path):
+        LOG.warning("affiliate_catalog.yaml not found at %s; inline affiliates disabled", path)
+        return []
+    try:
+        import yaml  # 遅延 import: 未導入でも他機能を巻き込まない
+    except ImportError:
+        LOG.warning("PyYAML not available; inline affiliates disabled")
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except (OSError, Exception) as e:  # yaml.YAMLError 含む
+        LOG.warning("affiliate_catalog.yaml unreadable (%s); inline affiliates disabled", e)
+        return []
+    if not isinstance(data, list):
+        LOG.warning("affiliate_catalog.yaml is not a list; ignoring")
+        return []
+    items = [it for it in data if isinstance(it, dict) and it.get("title") and it.get("url")]
+    return [it for it in items if is_compliant_affiliate(it)]
+
+
+def select_inline_affiliates(
+    category: str,
+    tags: Sequence[str],
+    max_count: int = 2,
+    *,
+    catalog: Optional[List[Dict[str, Any]]] = None,
+    rng: Optional[random.Random] = None,
+) -> List[Dict[str, Any]]:
+    """カテゴリ・タグマッチで本文中アフィ候補を最大 max_count 件選定。
+
+    approved による絞り込みはしない（dry-run で候補表示できるように）。実際に
+    リンクを出すかは format_inline_affiliate() が approved で判断する。
+    """
+    pool = catalog if catalog is not None else load_affiliate_catalog()
+    tagset = set(tags or [])
+
+    scored: List[Tuple[int, int, Dict[str, Any]]] = []
+    for idx, item in enumerate(pool):
+        cats = item.get("categories") or []
+        if category not in cats:
+            continue
+        overlap = len(set(item.get("tags") or []) & tagset)
+        # カテゴリ一致は前提。タグ重複が多いほど優先。重複 0 でも候補には残す。
+        scored.append((overlap, idx, item))
+
+    # タグ重複降順 → カタログ出現順で安定ソート
+    scored.sort(key=lambda t: (-t[0], t[1]))
+    selected = [item for _, _, item in scored[:max_count]]
+
+    # rng が与えられていれば同点群をシャッフルせず順序維持（決定論性優先）。
+    # 押し付けないため最大 max_count（HANDOFF: 1 記事 2 個まで）で打ち切り。
+    if rng is not None and len(scored) > max_count:
+        # 上位 max_count はそのまま。決定論テスト用に rng は予約のみ。
+        pass
+    return selected
+
+
+def format_inline_affiliate(item: Dict[str, Any]) -> str:
+    """本文中 H2 末尾に差し込む 1 行を返す。
+
+    未承認（approved=false）/ 非準拠 / url 欠落 のときは空文字を返し、render
+    側で挿入をスキップさせる（偽リンク・未承認リンクを公開しない）。
+    """
+    if not item.get("approved", False):
+        return ""
+    if not is_compliant_affiliate(item):
+        return ""
+    url = str(item.get("url", "")).strip()
+    title = str(item.get("title", "")).strip()
+    if not url or not title:
+        return ""
+    return _INLINE_FMT.format(url=url, title=title)

@@ -62,8 +62,10 @@ from scripts.topics import (
     determine_topic,
     build_query,
 )
-from scripts.affiliates import build_affiliate_hint
-from scripts.render import render_article, slugify
+from scripts.affiliates import build_affiliate_hint, select_inline_affiliates
+from scripts.render import render_article, slugify, extract_h2_titles, BLOG_DIR
+from scripts.lib.image_generator import generate_h2_images
+from scripts.lib.related_posts import load_existing_posts, find_related_posts
 from prompts.system import PERSONA_HEADER  # noqa: F401  (imported for completeness)
 from prompts.stage1_research import (
     STAGE1_SYSTEM_PROMPT,
@@ -336,9 +338,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-stage1-attempts", type=int, default=4,
                    help="Stage 1 が SKIP した場合に別 candidate で再試行する最大回数")
     p.add_argument("--skip-image", action="store_true",
-                   help="ヒーロー画像生成をスキップ（テキストだけ）")
+                   help="ヒーロー画像 + H2 画像生成をスキップ（テキストだけ）")
     p.add_argument("--image-out-dir", default="",
                    help="ヒーロー画像保存ディレクトリ override（テスト用）")
+    p.add_argument("--rich-layout", action="store_true",
+                   help="新レイアウト（H2画像 + 本文中アフィ + 関連記事）を有効化。"
+                        "未指定でも環境変数 RICH_LAYOUT=1 で有効化できる。")
     return p.parse_args()
 
 
@@ -552,6 +557,49 @@ def main() -> int:
         if result is not None:
             _saved_path, hero_image_url = result
 
+    # ----- 5.7 新レイアウト: H2 画像 / 本文中アフィ / 関連記事 -----
+    rich_layout = args.rich_layout or os.environ.get("RICH_LAYOUT") == "1"
+    h2_image_map: Dict[int, str] = {}
+    inline_affiliates: List[Dict[str, Any]] = []
+    related: List[Any] = []
+    if rich_layout:
+        h2_titles = extract_h2_titles(body_markdown)
+        LOG.info("Rich layout ON: %d H2 sections detected", len(h2_titles))
+
+        # H2 画像（--skip-image なら省略。dry-run はプレースホルダ）
+        if args.skip_image:
+            LOG.info("--skip-image given; skipping H2 image generation")
+        elif h2_titles:
+            try:
+                h2_image_map = generate_h2_images(
+                    slug=slug,
+                    h2_titles=h2_titles,
+                    category=category,
+                    chatllm=chatllm,
+                    dry_run=args.dry_run,
+                )
+            except Exception as e:  # 画像失敗で記事生成は止めない
+                LOG.warning("H2 image generation error: %s (continuing)", e)
+
+        # 本文中インラインアフィ（カテゴリ・タグマッチ、最大 2 個）
+        try:
+            inline_affiliates = select_inline_affiliates(category, tags, max_count=2)
+            LOG.info("Inline affiliate candidates: %s",
+                     [a.get("title") for a in inline_affiliates] or "(none)")
+        except Exception as e:
+            LOG.warning("Inline affiliate selection error: %s (continuing)", e)
+
+        # 関連記事（カテゴリ・タグマッチ、2〜3 件）
+        try:
+            existing = load_existing_posts(BLOG_DIR)
+            related = find_related_posts(
+                category, tags, existing, exclude_slug=slug, limit=3,
+            )
+            LOG.info("Related posts: %s",
+                     [getattr(p, "slug", "?") for p in related] or "(none)")
+        except Exception as e:
+            LOG.warning("Related posts error: %s (continuing)", e)
+
     # ----- 6. Render markdown -----
     try:
         filepath, slug_out, used_aff = render_article(
@@ -563,6 +611,9 @@ def main() -> int:
             pub_dt=today_jst,
             dry_run_dir=args.out_dir,
             hero_image_url=hero_image_url,
+            h2_image_map=h2_image_map,
+            inline_affiliates=inline_affiliates,
+            related_posts=related,
         )
     except (ValueError, OSError) as e:
         LOG.error("Render failed: %s", e)
@@ -588,6 +639,16 @@ def main() -> int:
     write_gh_output("word_count", str(word_count))
     write_gh_output("used_affiliates", ", ".join(used_aff) if used_aff else "(none)")
     write_gh_output("hero_image", hero_image_url or "(none)")
+    write_gh_output("rich_layout", "true" if rich_layout else "false")
+    write_gh_output("h2_image_count", str(len(h2_image_map)))
+    write_gh_output(
+        "inline_affiliate_candidates",
+        ", ".join(a.get("title", "?") for a in inline_affiliates) if inline_affiliates else "(none)",
+    )
+    write_gh_output(
+        "related_posts",
+        ", ".join(getattr(p, "slug", "?") for p in related) if related else "(none)",
+    )
     # for body of PR
     pr_body = (
         f"AI が自動生成した記事の PR です。\n\n"
@@ -597,8 +658,15 @@ def main() -> int:
         f"- 文字数: {word_count}\n"
         f"- 採用アフィリエイト: {', '.join(used_aff) if used_aff else '(なし)'}\n"
         f"- タグ: {', '.join(tags) if tags else '(なし)'}\n"
-        f"- ヒーロー画像: {hero_image_url or '(なし)'}\n\n"
-        f"## レビュー手順\n"
+        f"- ヒーロー画像: {hero_image_url or '(なし)'}\n"
+        f"- リッチレイアウト: {'ON' if rich_layout else 'OFF'}"
+        + (
+            f"（H2画像 {len(h2_image_map)} 枚 / "
+            f"本文中アフィ候補 {len(inline_affiliates)} 件 / "
+            f"関連記事 {len(related)} 件）\n\n"
+            if rich_layout else "\n\n"
+        )
+        + f"## レビュー手順\n"
         f"1. Cloudflare Pages のプレビュー URL（このコメントに自動付与されます）で表示確認\n"
         f"2. 編集が必要なら GitHub Web / Mobile で `{filepath.replace(_REPO_ROOT + '/', '')}` を直接編集\n"
         f"3. 問題なければ Merge → main → Cloudflare 自動デプロイ\n"

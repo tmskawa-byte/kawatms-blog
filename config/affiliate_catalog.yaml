@@ -1,0 +1,153 @@
+# ---------------------------------------------------------------------------
+# 本文中インラインアフィリエイト カタログ
+# ---------------------------------------------------------------------------
+# scripts/affiliates.py の select_inline_affiliates() が読み込む。
+# 記事の category / tags にマッチした候補から最大 2 件を本文中に自然挿入する。
+#
+# 運用ルール:
+#   - approved: false の間はリンクを出力しない（候補としては選ばれるが、
+#     render では出力スキップ）。ケンちゃんが実アフィリンクを url に入れて
+#     approved: true にした時点で本番に出る。承認前に偽リンクは公開しない。
+#   - url は承認時に実アフィリエイト URL（もしも / 楽天 / Amazon アソシエイト等）
+#     に差し替える。今は素の検索 URL をプレースホルダとして置いている。
+#
+# 制約（絶対遵守。affiliates.py 側でも denylist で二重チェック）:
+#   - 保険・金融・投資・FX・暗号資産・自動車保険一括見積もりは NG
+#     （共栄火災代理店と競合 / 防犯リスク）
+#   - 楽天損保 / 楽天証券 / 楽天カード等の金融系は NG
+#   - OK: Amazon カー用品、楽天市場の整備用品、自動車学校、整備士求人
+#
+# スキーマ:
+#   - title:      表示名（リンクテキストの素）
+#   - url:        遷移先（承認時に実アフィ URL へ）
+#   - categories: マッチ対象カテゴリ（整備の現場 / 越境EC事業 / AI・自動化 / 対馬ライフ）
+#   - tags:       マッチ対象タグ（記事 tags との重なりでスコアリング）
+#   - affiliate:  プラットフォーム識別子（amazon / rakuten / a8 / moshimo 等）
+#   - approved:   true で本番出力。false の間は出力スキップ
+# ---------------------------------------------------------------------------
+
+- title: "タイヤ空気圧ゲージ（エアゲージ）"
+  url: "https://www.amazon.co.jp/s?k=タイヤ+エアゲージ"
+  categories: ["整備の現場"]
+  tags: ["タイヤ", "整備", "タイヤ空気圧", "点検"]
+  affiliate: amazon
+  approved: false
+
+- title: "トルクレンチ（ホイールナット用）"
+  url: "https://www.amazon.co.jp/s?k=トルクレンチ+ホイール"
+  categories: ["整備の現場"]
+  tags: ["タイヤ", "整備", "ホイール", "工具"]
+  affiliate: amazon
+  approved: false
+
+- title: "エンジンオイル（化学合成油）"
+  url: "https://www.amazon.co.jp/s?k=エンジンオイル+化学合成"
+  categories: ["整備の現場"]
+  tags: ["オイル交換", "整備", "エンジン", "メンテナンス"]
+  affiliate: amazon
+  approved: false
+
+- title: "オイルフィルター（オイルエレメント）"
+  url: "https://www.amazon.co.jp/s?k=オイルフィルター"
+  categories: ["整備の現場"]
+  tags: ["オイル交換", "整備", "フィルター", "メンテナンス"]
+  affiliate: amazon
+  approved: false
+
+- title: "ヘッドライトクリーナー（黄ばみ除去）"
+  url: "https://www.amazon.co.jp/s?k=ヘッドライトクリーナー"
+  categories: ["整備の現場"]
+  tags: ["ライト", "整備", "ヘッドライト", "メンテナンス"]
+  affiliate: amazon
+  approved: false
+
+- title: "ブレーキクリーナー"
+  url: "https://www.amazon.co.jp/s?k=ブレーキクリーナー"
+  categories: ["整備の現場"]
+  tags: ["ブレーキ", "整備", "メンテナンス"]
+  affiliate: amazon
+  approved: false
+
+- title: "ジャンプスターター（モバイルバッテリー型）"
+  url: "https://www.amazon.co.jp/s?k=ジャンプスターター"
+  categories: ["整備の現場"]
+  tags: ["バッテリー", "整備", "トラブル", "メンテナンス"]
+  affiliate: amazon
+  approved: false
+
+- title: "ワイパーブレード（替えゴム）"
+  url: "https://www.amazon.co.jp/s?k=ワイパーブレード"
+  categories: ["整備の現場"]
+  tags: ["ワイパー", "整備", "メンテナンス", "車検"]
+  affiliate: amazon
+  approved: false
+
+- title: "クーラント（冷却水・ロングライフタイプ）"
+  url: "https://www.amazon.co.jp/s?k=クーラント+ロングライフ"
+  categories: ["整備の現場"]
+  tags: ["冷却水", "クーラント", "整備", "メンテナンス"]
+  affiliate: amazon
+  approved: false
+
+- title: "整備用品をまとめてチェック（楽天市場）"
+  url: "https://search.rakuten.co.jp/search/mall/整備用品/"
+  categories: ["整備の現場", "対馬ライフ"]
+  tags: ["整備", "メンテナンス", "工具", "車検"]
+  affiliate: rakuten
+  approved: false
+
+- title: "ドライブレコーダー（前後2カメラ）"
+  url: "https://www.amazon.co.jp/s?k=ドライブレコーダー+前後"
+  categories: ["整備の現場"]
+  tags: ["ドライブレコーダー", "道路交通法", "新技術", "安全"]
+  affiliate: amazon
+  approved: false
+
+- title: "LED ヘッドライトバルブ"
+  url: "https://www.amazon.co.jp/s?k=LED+ヘッドライトバルブ"
+  categories: ["整備の現場"]
+  tags: ["ライト", "新技術", "ヘッドライト", "整備"]
+  affiliate: amazon
+  approved: false
+
+- title: "タイヤチェーン（非金属・簡単装着）"
+  url: "https://www.amazon.co.jp/s?k=タイヤチェーン+非金属"
+  categories: ["整備の現場", "対馬ライフ"]
+  tags: ["タイヤ", "冬", "道路交通法", "安全"]
+  affiliate: amazon
+  approved: false
+
+- title: "カーシャンプー・洗車用品セット"
+  url: "https://www.amazon.co.jp/s?k=カーシャンプー+洗車"
+  categories: ["整備の現場", "対馬ライフ"]
+  tags: ["洗車", "メンテナンス", "整備"]
+  affiliate: amazon
+  approved: false
+
+- title: "車載工具セット（基本メンテナンス用）"
+  url: "https://www.amazon.co.jp/s?k=車載工具セット"
+  categories: ["整備の現場"]
+  tags: ["工具", "整備", "メンテナンス"]
+  affiliate: amazon
+  approved: false
+
+- title: "クルマの整備・点検がわかる本"
+  url: "https://search.rakuten.co.jp/search/mall/車+整備+点検+本/"
+  categories: ["整備の現場"]
+  tags: ["車検", "点検", "整備", "12ヶ月点検", "整備記録簿"]
+  affiliate: rakuten
+  approved: false
+
+- title: "合宿免許の比較・予約"
+  url: "https://www.google.com/search?q=合宿免許"
+  categories: ["対馬ライフ", "整備の現場"]
+  tags: ["免許", "道路交通法", "自動車学校"]
+  affiliate: a8
+  approved: false
+
+- title: "整備士の求人を探す"
+  url: "https://www.google.com/search?q=整備士+求人"
+  categories: ["整備の現場", "対馬ライフ"]
+  tags: ["整備士", "求人", "整備"]
+  affiliate: a8
+  approved: false

@@ -29,6 +29,13 @@ source: ケンちゃん時事フォロー + サイちゃん fact check
   - 次世代 ProPILOT（Level 2）と Level 4 モビリティサービスの違い
 - H2: テスラ FSD の「Full Self-Driving」表記の罠
   - 個人車は Level 2、Robotaxi は Level 4（テキサス州限定）
+- H2: 国交省「自動運転レベル分け」公式図（2017 年計画版）
+  - 出典：国土交通省 別添3（政府標準利用規約2.0）
+  - 画像：public/blog-assets/jidouunten-mlit-2017.jpeg
+- H2: 2017 年計画 vs 2026 年現実のギャップ
+  - 2017 年計画：2020 年に Level 4 移動サービス、2025 年目途に完全自動運転
+  - 2026 年現実：日産が横浜で実証実験中（2027 年度サービス目標）、Tesla Unsupervised FSD は 2026 Q4 持ち越し
+  - メーカーの公式アナウンスは「目標」で、実車整備の現場に降りてくるのは数年後
 - H2: 整備の現場で何が変わる？レベル別に整理
   - Level 2 = ACC / LKA の調整、カメラ・レーダー校正
   - Level 3 以上 = LiDAR、冗長ブレーキ、通信モジュール
@@ -52,6 +59,7 @@ source: ケンちゃん時事フォロー + サイちゃん fact check
 - Nissan ProPilot 2026 年版解説（renue）：https://renue.co.jp/posts/nissan-autonomous-driving-propilot-ai-guide-2026
 - Tesla Autopilot - Wikipedia：https://en.wikipedia.org/wiki/Tesla_Autopilot
 - Tesla unsupervised FSD Q4 2026（Electrek）：https://electrek.co/2026/04/22/tesla-elon-musk-unsupervised-fsd-consumer-cars-q4-delay-again/
+- 国交省「自動運転のレベル分けについて」（別添3、官民ITS構想・ロードマップ2017 ベース）：public/blog-assets/jidouunten-mlit-2017.jpeg（リポ内）
 
 ## 重要な制約
 

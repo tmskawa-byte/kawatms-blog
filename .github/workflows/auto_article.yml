@@ -51,6 +51,14 @@ on:
         options:
           - "true"
           - "false"
+      rich_layout:
+        description: "true: 新レイアウト（H2画像 + 本文中アフィ + 関連記事）を有効化"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 concurrency:
   group: kawatms-auto-article
@@ -87,6 +95,9 @@ jobs:
           CHATLLM_API_KEY: ${{ secrets.CHATLLM_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           LOG_LEVEL: INFO
+          # rich_layout=true のとき generate_article.py の新レイアウトを有効化。
+          # schedule 実行（inputs 空）では空文字 = OFF となり従来どおり。
+          RICH_LAYOUT: ${{ github.event.inputs.rich_layout == 'true' && '1' || '' }}
         run: |
           args=""
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then

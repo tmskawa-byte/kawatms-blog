@@ -2,10 +2,10 @@ name: Auto Article
 
 on:
   schedule:
-    # 2026-06-07 pivot: 毎日 07:00 JST = 22:00 UTC（前日）に変更
-    # 旧: '0 22 * * 0,2,4,6' (月水金日 = JST月水金日)
-    # 新: 毎日 1 本、整備の現場 7 サブテーマを曜日固定ローテで投稿
-    - cron: '0 22 * * *'
+    # Mon/Wed/Fri 07:00 JST = Sun/Tue/Thu 22:00 UTC.
+    # Long-form articles are 3x/week; daily random social clips are handled
+    # by ig-autopost without spending LLM credits.
+    - cron: '0 22 * * 0,2,4'
   workflow_dispatch:
     inputs:
       dry_run:

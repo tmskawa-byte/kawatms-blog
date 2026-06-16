@@ -151,3 +151,24 @@
   tags: ["整備士", "求人", "整備"]
   affiliate: a8
   approved: false
+
+- category: auto_driving_assist
+  name: "OBD2 スキャナー"
+  affiliate_url_placeholder: "https://www.amazon.co.jp/s?k=OBD2+スキャナー"
+  description: "運転支援付き車両の警告灯や故障コード確認に使う診断補助ツール候補。実リンク承認前のため本文には自動挿入しない。"
+  approved: false
+  pending_review: true
+
+- category: auto_driving_assist
+  name: "HUD（ヘッドアップディスプレイ）"
+  affiliate_url_placeholder: "https://www.amazon.co.jp/s?k=HUD+ヘッドアップディスプレイ+車"
+  description: "速度や簡易情報を前方視界付近に表示する後付け用品候補。適合と安全性の確認が必要なため未承認。"
+  approved: false
+  pending_review: true
+
+- category: auto_driving_assist
+  name: "ドラレコ AI 検知付き"
+  affiliate_url_placeholder: "https://www.amazon.co.jp/s?k=AI+検知+ドライブレコーダー"
+  description: "前方車両や歩行者検知などをうたうドライブレコーダー候補。機能表現と法規面を確認するまで未承認。"
+  approved: false
+  pending_review: true

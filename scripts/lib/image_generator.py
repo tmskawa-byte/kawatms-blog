@@ -154,7 +154,10 @@ def generate_h2_images(
 
         # Primary: Gemini API（Nano Banana）
         try:
-            image_bytes, mime = generate_h2_image(prompt)
+            image_bytes, mime = generate_h2_image(
+                prompt,
+                aspect_ratio=H2_ASPECT_RATIO,
+            )
             LOG.info("H2 #%d: generated via Gemini API (%d bytes, %s)", i, len(image_bytes), mime)
         except GeminiImageError as e:
             LOG.warning("H2 #%d: Gemini failed: %s; trying ChatLLM fallback", i, e)

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Tuple
+from typing import Optional, Tuple
 
 LOG = logging.getLogger(__name__)
 
@@ -28,33 +28,67 @@ def _client():
     return genai.Client(api_key=api_key)
 
 
-def generate_hero_image(prompt: str, timeout: int = 120) -> Tuple[bytes, str]:
+def generate_hero_image(
+    prompt: str,
+    *,
+    aspect_ratio: str = "16:9",
+    image_size: str = "2K",
+    timeout: int = 120,
+) -> Tuple[bytes, str]:
     """ヒーロー画像（テキスト入り）を Nano Banana Pro で生成。
 
     Returns: (image_bytes, mime_type)
     Raises: GeminiImageError
     """
-    return _generate(HERO_MODEL, prompt, timeout)
+    return _generate(
+        HERO_MODEL,
+        prompt,
+        timeout=timeout,
+        aspect_ratio=aspect_ratio,
+        image_size=image_size,
+    )
 
 
-def generate_h2_image(prompt: str, timeout: int = 120) -> Tuple[bytes, str]:
+def generate_h2_image(
+    prompt: str,
+    *,
+    aspect_ratio: str = "1:1",
+    timeout: int = 120,
+) -> Tuple[bytes, str]:
     """H2 挿絵（テキスト無し）を Nano Banana で生成。
 
     Returns: (image_bytes, mime_type)
     Raises: GeminiImageError
     """
-    return _generate(H2_MODEL, prompt, timeout)
+    return _generate(
+        H2_MODEL,
+        prompt,
+        timeout=timeout,
+        aspect_ratio=aspect_ratio,
+    )
 
 
-def _generate(model: str, prompt: str, timeout: int) -> Tuple[bytes, str]:
+def _generate(
+    model: str,
+    prompt: str,
+    *,
+    timeout: int,
+    aspect_ratio: str,
+    image_size: Optional[str] = None,
+) -> Tuple[bytes, str]:
     client = _client()
     try:
         from google.genai import types
+        image_config = {"aspect_ratio": aspect_ratio}
+        if image_size:
+            image_config["image_size"] = image_size
+
         response = client.models.generate_content(
             model=model,
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_modalities=["IMAGE", "TEXT"],
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(**image_config),
                 http_options=types.HttpOptions(timeout=timeout * 1000),
             ),
         )

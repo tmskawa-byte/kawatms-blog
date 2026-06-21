@@ -254,7 +254,11 @@ def generate_and_save_hero_image(
     # Primary: Gemini API（Nano Banana Pro）
     try:
         LOG.info("Generating hero image via Gemini API (Nano Banana Pro)...")
-        image_bytes, mime = generate_hero_image(image_prompt)
+        image_bytes, mime = generate_hero_image(
+            image_prompt,
+            aspect_ratio=HERO_ASPECT_RATIO,
+            image_size=HERO_RESOLUTION,
+        )
         LOG.info("Hero image generated via Gemini API: %d bytes, %s", len(image_bytes), mime)
     except GeminiImageError as e:
         LOG.warning("Gemini hero image failed: %s; falling back to ChatLLM route", e)

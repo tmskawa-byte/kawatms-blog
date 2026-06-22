@@ -11,23 +11,12 @@ type Props = CollectionEntry<'blog'>['data'];
 
 const { title, description, pubDate, updatedDate, heroImage, category, containsAffiliate } = Astro.props;
 const catMeta = getCategoryMeta(category);
-const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
 const adsenseBottomSlot = import.meta.env.PUBLIC_ADSENSE_SLOT_ARTICLE_BOTTOM;
 ---
 
 <html lang="ja">
 	<head>
 		<BaseHead title={title} description={description} image={heroImage} />
-		{
-			adsenseClient && (
-				<script
-					is:inline
-					async
-					src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
-					crossorigin="anonymous"
-				></script>
-			)
-		}
 		<style>
 			main {
 				width: calc(100% - 2em);

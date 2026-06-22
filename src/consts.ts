@@ -6,6 +6,9 @@ export const SITE_DESCRIPTION =
 	"長崎県対馬市の自動車整備工場「対馬モーターサービス」（個人事業主／適格請求書発行事業者）が運営するブログ。整備の現場・越境EC事業・AI API による業務自動化・対馬ライフを発信します。";
 export const SITE_URL = "https://tsushima-motor.com";
 
+// AdSense publisher IDs are intentionally public: they are included in the page source.
+export const ADSENSE_CLIENT = "ca-pub-1731762204000076";
+
 export const CATEGORIES = [
 	{
 		name: "整備の現場",

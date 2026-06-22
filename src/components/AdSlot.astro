@@ -1,12 +1,13 @@
 ---
+import { ADSENSE_CLIENT } from '../consts';
+
 interface Props {
 	adSlot?: string;
 	label?: string;
 }
 
 const { adSlot, label = '広告' } = Astro.props;
-const client = import.meta.env.PUBLIC_ADSENSE_CLIENT;
-const enabled = Boolean(client && adSlot);
+const enabled = Boolean(adSlot);
 ---
 
 {
@@ -16,7 +17,7 @@ const enabled = Boolean(client && adSlot);
 			<ins
 				class="adsbygoogle"
 				style="display:block"
-				data-ad-client={client}
+				data-ad-client={ADSENSE_CLIENT}
 				data-ad-slot={adSlot}
 				data-ad-format="auto"
 				data-full-width-responsive="true"

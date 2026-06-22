@@ -26,6 +26,7 @@ from scripts.lib.image_utils import (
     extension_for_mime,
     fetch_image_bytes,
 )
+from scripts.lib.gemini_image import generate_h2_image, GeminiImageError
 
 LOG = logging.getLogger(__name__)
 
@@ -146,29 +147,37 @@ def generate_h2_images(
                 LOG.info("H2 #%d: dry-run placeholder written (%s)", i, out_name)
             continue
 
-        # 2-b) 本番: Runway / Nano Banana Pro で生成
-        if chatllm is None:
-            LOG.warning("H2 #%d: chatllm not provided and not dry_run; skip", i)
-            continue
+        # 2-b) 本番: Gemini 優先 + ChatLLM フォールバック
         prompt = build_prompt(title, category)
-        try:
-            image_url_raw = chatllm.generate_image(
-                model=IMAGE_MODEL,
-                prompt=prompt,
-                aspect_ratio=H2_ASPECT_RATIO,
-                resolution=resolution,
-                num_images=1,
-                timeout=360,
-            )
-        except Exception as e:  # ChatLLMError 含む。1 枚の失敗で全体を止めない
-            LOG.warning("H2 #%d: image generation failed: %s (skip)", i, e)
-            continue
+        image_bytes = None
+        mime = "image/png"
 
+        # Primary: Gemini API（Nano Banana）
         try:
-            image_bytes, mime = fetch_image_bytes(image_url_raw, timeout=120)
-        except ImageFetchError as e:
-            LOG.warning("H2 #%d: image fetch failed: %s (skip)", i, e)
-            continue
+            image_bytes, mime = generate_h2_image(
+                prompt,
+                aspect_ratio=H2_ASPECT_RATIO,
+            )
+            LOG.info("H2 #%d: generated via Gemini API (%d bytes, %s)", i, len(image_bytes), mime)
+        except GeminiImageError as e:
+            LOG.warning("H2 #%d: Gemini failed: %s; trying ChatLLM fallback", i, e)
+            # Fallback: ChatLLM 経路（Phase 2 で撤去予定）
+            if chatllm is None:
+                LOG.warning("H2 #%d: no chatllm fallback available; skip", i)
+                continue
+            try:
+                image_url_raw = chatllm.generate_image(
+                    model=IMAGE_MODEL,
+                    prompt=prompt,
+                    aspect_ratio=H2_ASPECT_RATIO,
+                    resolution=resolution,
+                    num_images=1,
+                    timeout=360,
+                )
+                image_bytes, mime = fetch_image_bytes(image_url_raw, timeout=120)
+            except Exception as e2:
+                LOG.warning("H2 #%d: ChatLLM fallback also failed: %s (skip)", i, e2)
+                continue
 
         # mime に応じた拡張子で保存（既定は .jpg）
         ext = extension_for_mime(mime)

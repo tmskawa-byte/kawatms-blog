@@ -54,6 +54,7 @@ from scripts.lib.image_utils import (
     extension_for_mime,
     fetch_image_bytes,
 )
+from scripts.lib.gemini_image import generate_hero_image, GeminiImageError
 from scripts.topics import (
     CATEGORY_SUBTOPICS,
     SEIBI_SUBTOPICS,
@@ -246,31 +247,48 @@ def generate_and_save_hero_image(
         LOG.warning("Hero image prompt generation failed: %s (continuing without image)", e)
         return None
 
-    # ----- Stage 2.6: 画像生成 -----
+    # ----- Stage 2.6: 画像生成（Gemini 優先 + ChatLLM フォールバック）-----
+    image_bytes: Optional[bytes] = None
+    mime: str = "image/png"
+
+    # Primary: Gemini API（Nano Banana Pro）
     try:
-        LOG.info("Generating hero image via %s (%s, %s)...",
-                 IMAGE_MODEL, HERO_ASPECT_RATIO, HERO_RESOLUTION)
-        image_url_raw = chatllm.generate_image(
-            model=IMAGE_MODEL,
-            prompt=image_prompt,
+        LOG.info("Generating hero image via Gemini API (Nano Banana Pro)...")
+        image_bytes, mime = generate_hero_image(
+            image_prompt,
             aspect_ratio=HERO_ASPECT_RATIO,
-            resolution=HERO_RESOLUTION,
-            num_images=1,
-            timeout=360,
+            image_size=HERO_RESOLUTION,
         )
-    except ChatLLMError as e:
-        LOG.warning("Hero image generation failed: %s (continuing without image)", e)
-        return None
+        LOG.info("Hero image generated via Gemini API: %d bytes, %s", len(image_bytes), mime)
+    except GeminiImageError as e:
+        LOG.warning("Gemini hero image failed: %s; falling back to ChatLLM route", e)
 
-    LOG.info("Image URL kind: %s",
-             "data-url" if image_url_raw.startswith("data:") else "http")
+    # Fallback: ChatLLM 経路（Phase 2 で撤去予定）
+    if image_bytes is None:
+        try:
+            LOG.info("Generating hero image via ChatLLM (%s, %s, %s)...",
+                     IMAGE_MODEL, HERO_ASPECT_RATIO, HERO_RESOLUTION)
+            image_url_raw = chatllm.generate_image(
+                model=IMAGE_MODEL,
+                prompt=image_prompt,
+                aspect_ratio=HERO_ASPECT_RATIO,
+                resolution=HERO_RESOLUTION,
+                num_images=1,
+                timeout=360,
+            )
+        except ChatLLMError as e:
+            LOG.warning("Hero image generation failed (ChatLLM): %s (continuing without image)", e)
+            return None
 
-    # ----- 画像を bytes 化 -----
-    try:
-        image_bytes, mime = fetch_image_bytes(image_url_raw, timeout=120)
-    except ImageFetchError as e:
-        LOG.warning("Image fetch failed: %s (continuing without image)", e)
-        return None
+        LOG.info("Image URL kind: %s",
+                 "data-url" if image_url_raw.startswith("data:") else "http")
+
+        try:
+            image_bytes, mime = fetch_image_bytes(image_url_raw, timeout=120)
+        except ImageFetchError as e:
+            LOG.warning("Image fetch failed: %s (continuing without image)", e)
+            return None
+
     LOG.info("Image bytes: %d, mime: %s", len(image_bytes), mime)
 
     # ----- 保存 -----

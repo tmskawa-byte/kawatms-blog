@@ -1,0 +1,44 @@
+---
+interface Props {
+	adSlot?: string;
+	label?: string;
+}
+
+const { adSlot, label = '広告' } = Astro.props;
+const client = import.meta.env.PUBLIC_ADSENSE_CLIENT;
+const enabled = Boolean(client && adSlot);
+---
+
+{
+	enabled && (
+		<aside class="ad-slot" aria-label={label}>
+			<span class="ad-slot-label">{label}</span>
+			<ins
+				class="adsbygoogle"
+				style="display:block"
+				data-ad-client={client}
+				data-ad-slot={adSlot}
+				data-ad-format="auto"
+				data-full-width-responsive="true"
+			></ins>
+			<script is:inline>
+				(adsbygoogle = window.adsbygoogle || []).push({});
+			</script>
+		</aside>
+	)
+}
+
+<style>
+	.ad-slot {
+		margin: 2.5rem 0 0;
+		padding-top: 0.75rem;
+		border-top: 1px solid rgb(var(--gray-light));
+	}
+
+	.ad-slot-label {
+		display: block;
+		margin-bottom: 0.5rem;
+		color: rgb(var(--gray));
+		font-size: 0.75rem;
+	}
+</style>

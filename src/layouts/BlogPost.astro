@@ -4,17 +4,30 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
+import AdSlot from '../components/AdSlot.astro';
 import { getCategoryMeta } from '../consts';
 
 type Props = CollectionEntry<'blog'>['data'];
 
 const { title, description, pubDate, updatedDate, heroImage, category, containsAffiliate } = Astro.props;
 const catMeta = getCategoryMeta(category);
+const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
+const adsenseBottomSlot = import.meta.env.PUBLIC_ADSENSE_SLOT_ARTICLE_BOTTOM;
 ---
 
 <html lang="ja">
 	<head>
 		<BaseHead title={title} description={description} image={heroImage} />
+		{
+			adsenseClient && (
+				<script
+					is:inline
+					async
+					src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+					crossorigin="anonymous"
+				></script>
+			)
+		}
 		<style>
 			main {
 				width: calc(100% - 2em);
@@ -129,6 +142,7 @@ const catMeta = getCategoryMeta(category);
 						</aside>
 					)}
 					<slot />
+					<AdSlot adSlot={adsenseBottomSlot} />
 				</div>
 			</article>
 		</main>

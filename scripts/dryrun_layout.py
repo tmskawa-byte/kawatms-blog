@@ -141,9 +141,10 @@ def main() -> int:
         # 関連記事セクション
         checks.append(("## 関連記事 セクションがある（関連があれば）",
                        ("## 関連記事" in rendered) or (len(related) == 0)))
-        # PR 表記 / 楽天フッターが維持されている（後方互換）
+        # PR 表記 / 汎用楽天フッターを出さないこと
         checks.append(("PR 表記が冒頭にある", "アフィリエイト" in rendered[:300]))
-        checks.append(("楽天フッターが維持されている", "整備用品をチェック" in rendered))
+        checks.append(("汎用楽天フッターが出力されない",
+                       "rpx.a8.net" not in rendered and "整備用品をチェック" not in rendered))
         # 未承認アフィは本文に出ていない（💡 行が無い、catalog 全 approved=false 前提）
         any_approved = any(a.get("approved") for a in inline)
         checks.append(("未承認アフィは本文に出力されない",

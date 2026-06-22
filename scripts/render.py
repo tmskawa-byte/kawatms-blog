@@ -17,12 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-from scripts.affiliates import (
-    append_rakuten_footer,
-    format_inline_affiliate,
-    prepend_pr_notice,
-    replace_tokens,
-)
+from scripts.affiliates import format_inline_affiliate, prepend_pr_notice, replace_tokens
 
 LOG = logging.getLogger(__name__)
 
@@ -36,7 +31,7 @@ _H2_RE = re.compile(r"^##\s+(?!#)(.+?)\s*$")
 
 # 末尾の定型 H2（画像やインラインアフィを差し込みたくない見出し）。
 # enrichment 対象から外して、本文セクションだけをリッチ化する。
-_SKIP_ENRICH_HEADINGS = ("まとめ", "参考", "関連記事", "関連サービス", "整備用品をチェック")
+_SKIP_ENRICH_HEADINGS = ("まとめ", "参考", "関連記事", "関連サービス")
 
 # コードフェンス開始/終了行（``` と ~~~ の両方）。フェンス内の `## ` は見出し扱いしない。
 _FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -313,16 +308,13 @@ def render_article(
         body_replaced, h2_image_map, inline_affiliates
     )
 
-    # 1.3 末尾「## 関連記事」セクションを付与（楽天フッターより前）
+    # 1.3 末尾「## 関連記事」セクションを付与
     related_section = build_related_posts_section(related_posts)
     if related_section:
         body_enriched = body_enriched.rstrip() + "\n\n" + related_section
 
-    # 1.5 楽天市場 末尾誘導フッターを付与（Phase A: 全記事一律）
-    body_with_footer = append_rakuten_footer(body_enriched)
-
     # 2. PR 表記を冒頭に強制挿入
-    body_final = prepend_pr_notice(body_with_footer)
+    body_final = prepend_pr_notice(body_enriched)
 
     # 3. frontmatter + 本文を結合
     fm = build_frontmatter(title, description, pub_dt, category, hero_image_url)

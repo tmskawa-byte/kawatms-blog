@@ -44,7 +44,7 @@ MANUAL_EXTS = (".jpg", ".jpeg", ".png", ".webp")
 
 # 画像を生成しない定型見出し（まとめ・参考・関連等）。Runway コスト節約。
 # render.py の _SKIP_ENRICH_HEADINGS と意図的に揃えている（疎結合のため別定義）。
-DEFAULT_SKIP_HEADINGS = ("まとめ", "参考", "関連記事", "関連サービス", "整備用品をチェック")
+DEFAULT_SKIP_HEADINGS = ("まとめ", "参考", "関連記事", "関連サービス")
 
 # dry_run 時に書き出す 1x1 透明 PNG（プレースホルダ）
 _PLACEHOLDER_PNG = bytes.fromhex(

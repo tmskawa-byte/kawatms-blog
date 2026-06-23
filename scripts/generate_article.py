@@ -59,7 +59,6 @@ from scripts.topics import (
     CATEGORY_SUBTOPICS,
     SEIBI_SUBTOPICS,
     FRIDAY_ROTATION,
-    SUNDAY_ROTATION,
     determine_topic,
     build_query,
 )

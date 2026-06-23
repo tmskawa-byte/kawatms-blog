@@ -24,7 +24,7 @@ LOG = logging.getLogger(__name__)
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLOG_DIR = os.path.join(REPO_ROOT, "src", "content", "blog")
 
-VALID_CATEGORIES = {"整備の現場", "越境EC事業", "AI・自動化", "対馬ライフ"}
+VALID_CATEGORIES = {"整備の現場", "AI・自動化", "対馬ライフ"}
 
 # H2 行（`## 見出し`）。`### ` 以下や `#`（H1）は対象外。
 _H2_RE = re.compile(r"^##\s+(?!#)(.+?)\s*$")

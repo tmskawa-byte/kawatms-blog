@@ -36,7 +36,7 @@ SUBTOPIC_HISTORY_KEEP = 20
 JST = timezone(timedelta(hours=9))
 
 FRIDAY_ROTATION_LEN = 3   # 道路交通法 / 新技術新TEC / 保険
-SUNDAY_ROTATION_LEN = 3   # 越境EC / AI / 対馬
+SUNDAY_ROTATION_LEN = 2   # AI / 対馬
 
 
 def setup_logging() -> None:
@@ -89,7 +89,7 @@ def write_rotation_index(d: Dict[str, int]) -> None:
         "friday_seibi": d.get("friday_seibi", 0),
         "sunday_adhoc": d.get("sunday_adhoc", 0),
         "_comment_friday": "0=道路交通法, 1=新技術新TEC, 2=保険 (mod 3)",
-        "_comment_sunday": "0=越境EC事業, 1=AI・自動化, 2=対馬ライフ (mod 3)",
+        "_comment_sunday": "0=AI・自動化, 1=対馬ライフ (mod 2)",
     }
     with open(ROTATION_INDEX_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -166,7 +166,7 @@ def main() -> int:
 
     # 2. rotation_index 更新
     #    金曜整備（subtopic ∈ {道路交通法, 新技術新TEC情報, 保険}）なら friday_seibi++
-    #    日曜アドホック（category ∈ {越境EC事業, AI・自動化, 対馬ライフ}）なら sunday_adhoc++
+    #    日曜アドホック（category ∈ {AI・自動化, 対馬ライフ}）なら sunday_adhoc++
     rotation = read_rotation_index()
     bumped = False
     if category == "整備の現場" and subtopic in (
@@ -175,7 +175,7 @@ def main() -> int:
         rotation["friday_seibi"] = (rotation["friday_seibi"] + 1) % FRIDAY_ROTATION_LEN
         bumped = True
         LOG.info("friday_seibi advanced to %d", rotation["friday_seibi"])
-    elif category in ("越境EC事業", "AI・自動化", "対馬ライフ"):
+    elif category in ("AI・自動化", "対馬ライフ"):
         rotation["sunday_adhoc"] = (rotation["sunday_adhoc"] + 1) % SUNDAY_ROTATION_LEN
         bumped = True
         LOG.info("sunday_adhoc advanced to %d", rotation["sunday_adhoc"])

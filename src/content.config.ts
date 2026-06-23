@@ -17,7 +17,6 @@ const blog = defineCollection({
 		tags: z.array(z.string()).optional(),
 		category: z.enum([
 			"整備の現場",
-			"越境EC事業",
 			"AI・自動化",
 			"対馬ライフ",
 		]),

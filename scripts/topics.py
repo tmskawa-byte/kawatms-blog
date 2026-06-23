@@ -1,8 +1,8 @@
 """
 Topics, subtopics, weekday → category routing.
 
-kawatms-blog はカテゴリ4種固定:
-    整備の現場 / 越境EC事業 / AI・自動化 / 対馬ライフ
+kawatms-blog はカテゴリ3種固定:
+    整備の現場 / AI・自動化 / 対馬ライフ
 
 投稿スケジュール (JST) — 2026-06-07 pivot:
     毎日 07:00 JST 投稿、整備の現場 7 サブテーマ曜日固定ローテ
@@ -16,8 +16,7 @@ kawatms-blog はカテゴリ4種固定:
 
 旧仕様メモ:
     旧 cron: 月水金日 (4日/週)、金=道交法/新技術/保険ローテ、日=5サブテーマローテ
-    旧アドホック (越境EC / AI / 対馬ライフ) は SUNDAY_ROTATION に残置。
-    将来復元する場合は determine_topic() を旧版に戻し、cron を 0,2,4,6 に戻す。
+    旧アドホックカテゴリは現在の自動投稿対象外。
 """
 from __future__ import annotations
 
@@ -119,7 +118,7 @@ NEWSPAPER_DOMAINS: List[str] = [
     "mainichi.jp",
 ]
 
-# 越境EC事業 / AI・自動化用 — IT・ビジネスメディア
+# AI・自動化用 — IT・ビジネスメディア
 TECH_DOMAINS: List[str] = [
     "itmedia.co.jp",
     "ascii.jp",
@@ -127,9 +126,6 @@ TECH_DOMAINS: List[str] = [
     "publickey1.jp",
     "gigazine.net",
     "techcrunch.com",
-    "jetro.go.jp",        # 越境EC
-    "ec-orange.jp",
-    "netshop.impress.co.jp",
     "ja.wikipedia.org",
     "nikkei.com",
 ]
@@ -333,28 +329,6 @@ SEIBI_ROTATION = [
     "保険",
 ]
 
-# 旧 日曜日 アドホックカテゴリ ローテーション順
-#   A8 等アフィリエイト承認後の復元用として残置。新方式 (毎日 7 サブテーマ) に
-#   含まれていないので、復元時は determine_topic() を旧版に戻す必要あり。
-SUNDAY_ROTATION = ["越境EC事業", "AI・自動化", "対馬ライフ"]
-
-# 越境EC事業 サブトピック
-EKKYO_SUBTOPICS: Dict[str, Dict] = {
-    "_default": {
-        "candidates": [
-            "BASE ショップ 立ち上げ",
-            "海外発送 EMS 比較",
-            "中古パーツ 輸出 関税",
-            "Buyee 転送 サービス",
-            "越境EC 決済 Wise Payoneer",
-            "アフリカ向け 中古車 部品",
-            "オーストラリア 中古車 規制",
-        ],
-        "domains": TECH_DOMAINS,
-        "extra_query": "越境EC 輸出",
-    },
-}
-
 # AI・自動化 サブトピック
 AI_SUBTOPICS: Dict[str, Dict] = {
     "_default": {
@@ -392,7 +366,6 @@ TSUSHIMA_SUBTOPICS: Dict[str, Dict] = {
 # カテゴリ → サブトピック辞書のマップ
 CATEGORY_SUBTOPICS = {
     "整備の現場": SEIBI_SUBTOPICS,
-    "越境EC事業": EKKYO_SUBTOPICS,
     "AI・自動化": AI_SUBTOPICS,
     "対馬ライフ": TSUSHIMA_SUBTOPICS,
 }

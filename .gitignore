@@ -201,3 +201,4 @@ dist
 ### Astro ###
 .astro/
 __pycache__/
+.ai-handoff/patrol_auto_fix_state.json

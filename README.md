@@ -161,3 +161,7 @@ python scripts/generate_article.py --dry-run \
 - **金融系トピック禁止**: 投資・株・FX・ローン組み方アドバイスはプロンプトレベルでブロック（保険は OK だが整備士目線必須）
 - **ハルシネーション抑制**: 数値・固有名詞は Tavily 一次情報の範囲でのみ言及（プロンプトで明示）
 - **ステマ規制対応**: 全記事冒頭に「※本記事にはアフィリエイト広告（プロモーション）が含まれます。」を `render.py` が強制挿入
+
+### Blog Patrol → Codex 自動修正
+
+Claude patrol が記事レビューでNGを見つけた場合、対象記事1本だけを別worktreeでCodexに修正させ、build/check後に `patrol-auto-fix` ラベル付きPRを作成できます。初期状態では自動マージは無効です。運用・停止条件・有効化手順は [docs/PATROL_CODEX_AUTO_FIX.md](docs/PATROL_CODEX_AUTO_FIX.md) を参照してください。

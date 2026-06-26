@@ -98,6 +98,7 @@ ROTATION_INDEX_FILE = os.path.join(STATE_DIR, "rotation_index.json")
 HERO_IMAGE_DIR = os.path.join(_REPO_ROOT, "public", "images", "articles")
 # 記事 frontmatter / <img src> から参照するときの URL パス（先頭 / 必須）
 HERO_IMAGE_URL_PREFIX = "/images/articles"
+SITE_URL = "https://tsushima-motor.com"
 
 SUBTOPIC_EXCLUDE_WINDOW = 5
 SUBTOPIC_HISTORY_KEEP = 20
@@ -330,6 +331,16 @@ def write_gh_summary(text: str) -> None:
         return
     with open(gh_sum, "a", encoding="utf-8") as f:
         f.write(text)
+
+
+def make_absolute_site_url(path_or_url: Optional[str]) -> str:
+    if not path_or_url or path_or_url == "(none)":
+        return ""
+    if path_or_url.startswith(("http://", "https://")):
+        return path_or_url
+    if path_or_url.startswith("/"):
+        return f"{SITE_URL}{path_or_url}"
+    return f"{SITE_URL}/{path_or_url.lstrip('/')}"
 
 
 # ---------------------------------------------------------------------------
@@ -646,6 +657,9 @@ def main() -> int:
     LOG.info("=== Generated: %s (%d chars, hero=%s) ===",
              filepath, word_count, hero_image_url or "(none)")
 
+    published_url = f"{SITE_URL}/blog/{slug_out}/"
+    absolute_hero_image_url = make_absolute_site_url(hero_image_url)
+
     # ----- 7. Workflow output -----
     write_gh_output("category", category)
     write_gh_output("subtopic_key", subtopic_key)
@@ -655,7 +669,8 @@ def main() -> int:
     write_gh_output("filepath", filepath)
     write_gh_output("word_count", str(word_count))
     write_gh_output("used_affiliates", ", ".join(used_aff) if used_aff else "(none)")
-    write_gh_output("hero_image", hero_image_url or "(none)")
+    write_gh_output("hero_image_path", hero_image_url or "(none)")
+    write_gh_output("hero_image", absolute_hero_image_url)
     write_gh_output("rich_layout", "true" if rich_layout else "false")
     write_gh_output("h2_image_count", str(len(h2_image_map)))
     write_gh_output(
@@ -666,6 +681,15 @@ def main() -> int:
         "related_posts",
         ", ".join(getattr(p, "slug", "?") for p in related) if related else "(none)",
     )
+    # Aliases for downstream GitHub Actions integrations.
+    write_gh_output("article_title", title)
+    write_gh_output("article_description", description)
+    write_gh_output("article_slug", slug_out)
+    write_gh_output("published_url", published_url)
+    write_gh_output("hero_image_url", absolute_hero_image_url)
+    write_gh_output("description", description)
+    write_gh_output("url", published_url)
+    write_gh_output("hero_image_absolute", absolute_hero_image_url)
     # for body of PR
     pr_body = (
         f"AI が自動生成した記事の PR です。\n\n"

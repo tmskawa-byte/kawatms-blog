@@ -178,3 +178,48 @@ jobs:
             --squash \
             --delete-branch \
             --subject "feat(blog): auto-generated article — ${{ steps.gen.outputs.title }}"
+
+      - name: Notify Make.com (GBP auto-post)
+        if: |
+          success() &&
+          steps.check.outputs.has_article == 'true' &&
+          steps.gen.outputs.url != '' &&
+          github.event.inputs.dry_run != 'true' &&
+          github.event.inputs.preview_only != 'true' &&
+          (github.event_name == 'schedule' || github.event.inputs.auto_merge == 'true')
+        env:
+          MAKE_GBP_WEBHOOK_URL: ${{ secrets.MAKE_GBP_WEBHOOK_URL }}
+          ARTICLE_TITLE: ${{ steps.gen.outputs.article_title }}
+          ARTICLE_DESCRIPTION: ${{ steps.gen.outputs.description }}
+          ARTICLE_URL: ${{ steps.gen.outputs.url }}
+          ARTICLE_HERO_IMAGE: ${{ steps.gen.outputs.hero_image }}
+          ARTICLE_SLUG: ${{ steps.gen.outputs.slug }}
+        run: |
+          if [ -z "$MAKE_GBP_WEBHOOK_URL" ]; then
+            echo "MAKE_GBP_WEBHOOK_URL is not set; skipping GBP webhook"
+            exit 0
+          fi
+
+          python - <<'PY' > /tmp/gbp-webhook-payload.json
+          import json
+          import os
+
+          payload = {
+              "title": os.environ.get("ARTICLE_TITLE", ""),
+              "description": os.environ.get("ARTICLE_DESCRIPTION", ""),
+              "url": os.environ.get("ARTICLE_URL", ""),
+              "heroImage": os.environ.get("ARTICLE_HERO_IMAGE", ""),
+              "slug": os.environ.get("ARTICLE_SLUG", ""),
+          }
+          print(json.dumps(payload, ensure_ascii=False))
+          PY
+
+          if ! response="$(curl --fail-with-body --silent --show-error --max-time 20 \
+            -X POST "$MAKE_GBP_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/gbp-webhook-payload.json 2>&1)"; then
+            echo "::warning::Make.com GBP webhook failed: $response"
+            exit 0
+          fi
+
+          echo "Make.com GBP webhook notified."

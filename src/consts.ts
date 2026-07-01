@@ -1,9 +1,9 @@
 // Place any global data in this file.
 // You can import this data from anywhere in your site by using the `import` keyword.
 
-export const SITE_TITLE = "対馬モーターサービス blog";
+export const SITE_TITLE = "対馬モーターサービス blog | 長崎県対馬市の整備工場";
 export const SITE_DESCRIPTION =
-	"長崎県対馬市の自動車整備工場「対馬モーターサービス」（個人事業主／適格請求書発行事業者）が運営するブログ。整備の現場・AI API による業務自動化・対馬ライフを発信します。";
+	"長崎県対馬市の整備工場「対馬モーターサービス」が運営するブログ。整備の現場・車のメンテナンス・自動車業界ニュースを整備士目線で発信";
 export const SITE_URL = "https://tsushima-motor.com";
 
 // AdSense publisher IDs are intentionally public: they are included in the page source.

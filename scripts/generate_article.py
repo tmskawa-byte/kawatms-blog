@@ -58,7 +58,6 @@ from scripts.lib.gemini_image import generate_hero_image, GeminiImageError
 from scripts.topics import (
     CATEGORY_SUBTOPICS,
     SEIBI_SUBTOPICS,
-    FRIDAY_ROTATION,
     determine_topic,
     build_query,
 )
@@ -125,10 +124,11 @@ def read_rotation_index() -> Dict[str, int]:
         return {
             "friday_seibi": int(data.get("friday_seibi", 0)),
             "sunday_adhoc": int(data.get("sunday_adhoc", 0)),
+            "subtopic_seibi": int(data.get("subtopic_seibi", 0)),
         }
     except (FileNotFoundError, ValueError, OSError) as e:
-        LOG.warning("rotation_index.json unreadable (%s); defaulting to 0/0", e)
-        return {"friday_seibi": 0, "sunday_adhoc": 0}
+        LOG.warning("rotation_index.json unreadable (%s); defaulting to 0/0/0", e)
+        return {"friday_seibi": 0, "sunday_adhoc": 0, "subtopic_seibi": 0}
 
 
 def read_recent_subtopics() -> List[Dict[str, Any]]:
@@ -408,12 +408,10 @@ def main() -> int:
         if not cat_subs:
             LOG.error("Invalid --category %r", category)
             return 2
-        # 整備の現場でサブ未指定なら weekday から推測、それ以外は _default
+        # 整備の現場でサブ未指定なら subtopic_seibi から推測、それ以外は _default
         if category == "整備の現場":
             _, subtopic_key, meta = determine_topic(
-                weekday,
-                rotation["friday_seibi"],
-                rotation["sunday_adhoc"],
+                rotation["subtopic_seibi"],
             )
             if subtopic_key not in cat_subs:
                 subtopic_key = "整備情報"
@@ -423,13 +421,16 @@ def main() -> int:
             meta = cat_subs["_default"]
     else:
         category, subtopic_key, meta = determine_topic(
-            weekday,
-            rotation["friday_seibi"],
-            rotation["sunday_adhoc"],
+            rotation["subtopic_seibi"],
         )
 
-    LOG.info("Determined topic: weekday=%d, category=%s, subtopic_key=%s",
-             weekday, category, subtopic_key)
+    LOG.info(
+        "Determined topic: weekday=%d, subtopic_index=%d, category=%s, subtopic_key=%s",
+        weekday,
+        rotation["subtopic_seibi"],
+        category,
+        subtopic_key,
+    )
 
     # ----- 2. candidate 抽選 -----
     if args.candidate:

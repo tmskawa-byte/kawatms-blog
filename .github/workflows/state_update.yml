@@ -37,6 +37,7 @@ jobs:
 
       - name: Bump rotation + history
         run: |
+          # scripts/bump_state.py advances subtopic_seibi only after an auto-article PR is merged.
           python scripts/bump_state.py \
             --pr-body /tmp/pr/body.txt \
             --pr-title "${{ github.event.pull_request.title }}"

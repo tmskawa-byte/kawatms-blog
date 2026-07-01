@@ -3,6 +3,14 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import { getCollection } from 'astro:content';
+import FormattedDate from '../components/FormattedDate.astro';
+
+const posts = (await getCollection('blog'))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 3);
+
+const getPostUrl = (post: (typeof posts)[number]) => `/blog/${post.data.slug ?? post.id}/`;
 ---
 
 <!doctype html>
@@ -17,12 +25,35 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 			<p>
 				長崎県対馬市で <strong>対馬モーターサービス</strong> を経営する河本岳志（かわもと たけし）の個人ブログです。
 			</p>
+			<p>
+				対馬モーターサービスは、長崎県対馬市の自動車整備工場です。個人事業主として、車検、点検、一般整備、修理、タイヤ交換、オイル交換、中古車買取など、地域の車に関わる仕事を日々行っています。離島では車が生活や仕事を支える大切な移動手段になるため、現場で見える故障の傾向、部品やメンテナンスの考え方、ユーザーが知っておくと安心できる情報を、できるだけ実務目線で残していきます。
+			</p>
+			<p>
+				本ブログでは、整備士目線での自動車情報、整備の現場で感じたこと、車のメンテナンス知識、自動車業界のニュース、AI API を使った業務効率化の試行、対馬で事業を続ける中での学びを発信します。広告やアフィリエイトを含む記事では、その旨を明示し、読者が判断しやすい形で掲載します。
+			</p>
 
 			<h2>このブログで扱うこと</h2>
+			<p>
+				主なカテゴリは「整備の現場」「AI・自動化」「対馬ライフ」です。車の故障予防や日常点検の考え方から、地方の小さな整備工場での AI 活用、国境離島での暮らしと仕事まで、実体験に近い内容を中心にまとめています。
+			</p>
 			<ul>
 				<li>🚗 <strong>車・整備</strong>：新型車や旧車の話</li>
 				<li>🤖 <strong>AI API による自動化</strong>：AI ツールを業務に取り入れる試行</li>
 				<li>🏝 <strong>対馬ライフ</strong>：国境離島でのビジネス</li>
+			</ul>
+
+			<h2>最新記事</h2>
+			<ul>
+				{
+					posts.map((post) => (
+						<li>
+							<a href={getPostUrl(post)}>{post.data.title}</a>
+							<small>
+								（<FormattedDate date={post.data.pubDate} />）
+							</small>
+						</li>
+					))
+				}
 			</ul>
 
 			<p>

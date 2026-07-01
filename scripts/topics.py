@@ -1,18 +1,19 @@
 """
-Topics, subtopics, weekday → category routing.
+Topics, subtopics, rotation index → category routing.
 
 kawatms-blog はカテゴリ3種固定:
     整備の現場 / AI・自動化 / 対馬ライフ
 
-投稿スケジュール (JST) — 2026-06-07 pivot:
-    毎日 07:00 JST 投稿、整備の現場 7 サブテーマ曜日固定ローテ
-    月 → 整備の現場 - 新車情報            (#1)
-    火 → 整備の現場 - 整備情報            (#2)
-    水 → 整備の現場 - 道路交通法          (#3)
-    木 → 整備の現場 - 新技術新TEC情報     (#4)
-    金 → 整備の現場 - 保険               (#5)
-    土 → 整備の現場 - リコール情報        (#6)
-    日 → 整備の現場 - 事故の判例          (#7)
+投稿スケジュール (JST) — 2026-07-01 pivot:
+    月水金 07:00 JST 投稿、整備の現場 7 サブテーマを state/rotation_index.json
+    の subtopic_seibi で順番ローテ。
+    0 → 整備の現場 - 新車情報
+    1 → 整備の現場 - 整備情報
+    2 → 整備の現場 - 道路交通法
+    3 → 整備の現場 - 新技術新TEC情報
+    4 → 整備の現場 - 保険
+    5 → 整備の現場 - リコール情報
+    6 → 整備の現場 - 事故の判例
 
 旧仕様メモ:
     旧 cron: 月水金日 (4日/週)、金=道交法/新技術/保険ローテ、日=5サブテーマローテ
@@ -301,18 +302,17 @@ SEIBI_SUBTOPICS: Dict[str, Dict] = {
 }
 
 # ---------------------------------------------------------------------------
-# 2026-06-07 pivot: 曜日固定ローテーション (整備の現場 7 サブテーマ)
+# 2026-07-01 pivot: 順番ローテーション (整備の現場 7 サブテーマ)
 # ---------------------------------------------------------------------------
-# Python の datetime.weekday(): 0=月, 1=火, ..., 6=日
-WEEKDAY_SEIBI_MAP: Dict[int, str] = {
-    0: "新車情報",       # 月
-    1: "整備情報",       # 火
-    2: "道路交通法",     # 水
-    3: "新技術新TEC情報", # 木
-    4: "保険",          # 金
-    5: "リコール情報",   # 土
-    6: "事故の判例",     # 日
-}
+SEIBI_SUBTOPIC_ROTATION = [
+    "新車情報",
+    "整備情報",
+    "道路交通法",
+    "新技術新TEC情報",
+    "保険",
+    "リコール情報",
+    "事故の判例",
+]
 
 # ---------------------------------------------------------------------------
 # 旧仕様残置 (2026-06-07 までは現役だったローテ。将来復元用に残しておく)
@@ -478,25 +478,22 @@ def pick_candidate(
 
 
 # ---------------------------------------------------------------------------
-# Weekday → (category, subtopic_key) の決定ロジック
+# Rotation index → (category, subtopic_key) の決定ロジック
 # ---------------------------------------------------------------------------
 def determine_topic(
-    weekday: int,
-    friday_index: int = 0,
-    sunday_index: int = 0,
+    subtopic_index: int = 0,
 ) -> Tuple[str, str, Dict]:
     """
-    weekday: 0=月, 1=火, ..., 6=日 (Python の datetime.weekday() 準拠)
+    subtopic_index: state/rotation_index.json の subtopic_seibi。
 
-    2026-06-07 pivot 以降は曜日固定ローテ。WEEKDAY_SEIBI_MAP を引くだけ。
-    friday_index / sunday_index は旧仕様との後方互換のため引数に残しているが
-    新ロジックでは参照しない（呼び出し側を変えずに済むため）。
+    2026-07-01 pivot 以降は曜日ではなく成功済み投稿数ベースの順番ローテ。
+    インデックスは 7 で mod するため、7 → 0 として新車情報に戻る。
 
     Returns: (category, subtopic_key, subtopic_meta_dict)
         subtopic_meta_dict は SEIBI_SUBTOPICS[subtopic_key] の中身
         (candidates / domains / extra_query を持つ)
     """
-    sub_key = WEEKDAY_SEIBI_MAP.get(weekday, "整備情報")
+    sub_key = SEIBI_SUBTOPIC_ROTATION[subtopic_index % len(SEIBI_SUBTOPIC_ROTATION)]
     if sub_key not in SEIBI_SUBTOPICS:
         sub_key = "整備情報"
     return "整備の現場", sub_key, SEIBI_SUBTOPICS[sub_key]

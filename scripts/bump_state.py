@@ -7,8 +7,8 @@ PR マージ後に呼ばれる state 更新スクリプト。
 - マージされた PR から `category` / `subtopic_key` / `candidate` / `title` を
   PR body から正規表現で抽出
 - state/recent_subtopics.json に履歴を追記（最大 SUBTOPIC_HISTORY_KEEP 件）
-- 金曜の整備記事なら state/rotation_index.json の friday_seibi を進める
-- 日曜のアドホック記事なら sunday_adhoc を進める
+- 整備の現場の記事なら state/rotation_index.json の subtopic_seibi を進める
+- 旧互換として friday_seibi / sunday_adhoc も保持する
 
 CLI:
     --pr-body PATH    : PR body を書き出した一時ファイルのパス（必須）
@@ -37,6 +37,7 @@ JST = timezone(timedelta(hours=9))
 
 FRIDAY_ROTATION_LEN = 3   # 道路交通法 / 新技術新TEC / 保険
 SUNDAY_ROTATION_LEN = 2   # AI / 対馬
+SEIBI_SUBTOPIC_ROTATION_LEN = 7
 
 
 def setup_logging() -> None:
@@ -76,10 +77,11 @@ def read_rotation_index() -> Dict[str, int]:
         return {
             "friday_seibi": int(data.get("friday_seibi", 0)),
             "sunday_adhoc": int(data.get("sunday_adhoc", 0)),
+            "subtopic_seibi": int(data.get("subtopic_seibi", 0)),
         }
     except (FileNotFoundError, ValueError, OSError) as e:
-        LOG.warning("rotation_index.json unreadable (%s); defaulting to 0/0", e)
-        return {"friday_seibi": 0, "sunday_adhoc": 0}
+        LOG.warning("rotation_index.json unreadable (%s); defaulting to 0/0/0", e)
+        return {"friday_seibi": 0, "sunday_adhoc": 0, "subtopic_seibi": 0}
 
 
 def write_rotation_index(d: Dict[str, int]) -> None:
@@ -88,8 +90,10 @@ def write_rotation_index(d: Dict[str, int]) -> None:
     payload = {
         "friday_seibi": d.get("friday_seibi", 0),
         "sunday_adhoc": d.get("sunday_adhoc", 0),
+        "subtopic_seibi": d.get("subtopic_seibi", 0),
         "_comment_friday": "0=道路交通法, 1=新技術新TEC, 2=保険 (mod 3)",
         "_comment_sunday": "0=AI・自動化, 1=対馬ライフ (mod 2)",
+        "_comment_subtopic_seibi": "0=新車情報, 1=整備情報, 2=道路交通法, 3=新技術新TEC情報, 4=保険, 5=リコール情報, 6=事故の判例 (mod 7)",
     }
     with open(ROTATION_INDEX_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -165,16 +169,16 @@ def main() -> int:
              len(history), min(len(history), SUBTOPIC_HISTORY_KEEP))
 
     # 2. rotation_index 更新
-    #    金曜整備（subtopic ∈ {道路交通法, 新技術新TEC情報, 保険}）なら friday_seibi++
-    #    日曜アドホック（category ∈ {AI・自動化, 対馬ライフ}）なら sunday_adhoc++
+    #    整備の現場なら subtopic_seibi++。PR マージ後だけ呼ばれるため SKIP 時は据置。
+    #    friday_seibi / sunday_adhoc は旧互換として維持。
     rotation = read_rotation_index()
     bumped = False
-    if category == "整備の現場" and subtopic in (
-        "道路交通法", "新技術新TEC情報", "保険",
-    ):
-        rotation["friday_seibi"] = (rotation["friday_seibi"] + 1) % FRIDAY_ROTATION_LEN
+    if category == "整備の現場":
+        rotation["subtopic_seibi"] = (
+            rotation["subtopic_seibi"] + 1
+        ) % SEIBI_SUBTOPIC_ROTATION_LEN
         bumped = True
-        LOG.info("friday_seibi advanced to %d", rotation["friday_seibi"])
+        LOG.info("subtopic_seibi advanced to %d", rotation["subtopic_seibi"])
     elif category in ("AI・自動化", "対馬ライフ"):
         rotation["sunday_adhoc"] = (rotation["sunday_adhoc"] + 1) % SUNDAY_ROTATION_LEN
         bumped = True

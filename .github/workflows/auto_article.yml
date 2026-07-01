@@ -2,10 +2,9 @@ name: Auto Article
 
 on:
   schedule:
-    # 2026-06-07 pivot: 毎日 07:00 JST = 22:00 UTC（前日）に変更
-    # 旧: '0 22 * * 0,2,4,6' (月水金日 = JST月水金日)
-    # 新: 毎日 1 本、整備の現場 7 サブテーマを曜日固定ローテで投稿
-    - cron: '0 22 * * *'
+    # 2026-07-01: 週3投稿。UTC 日/火/木 22:00 = JST 月/水/金 07:00。
+    # 整備の現場 7 サブテーマは state/rotation_index.json の subtopic_seibi で順番ローテ。
+    - cron: '0 22 * * 0,2,4'
   workflow_dispatch:
     inputs:
       dry_run:

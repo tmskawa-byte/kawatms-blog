@@ -37,7 +37,9 @@ jobs:
 
       - name: Bump rotation + history
         run: |
-          # scripts/bump_state.py advances subtopic_seibi only after an auto-article PR is merged.
+          # Manual merge fallback. Scheduled auto-article merges bump state inline
+          # in auto_article.yml because GITHUB_TOKEN-triggered PR close events do
+          # not start a second workflow run.
           python scripts/bump_state.py \
             --pr-body /tmp/pr/body.txt \
             --pr-title "${{ github.event.pull_request.title }}"

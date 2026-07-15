@@ -178,6 +178,36 @@ jobs:
             --delete-branch \
             --subject "feat(blog): auto-generated article — ${{ steps.gen.outputs.title }}"
 
+      - name: Bump rotation state after auto-merge
+        if: |
+          steps.cpr.outputs.pull-request-number != '' &&
+          (github.event_name == 'schedule' || github.event.inputs.auto_merge == 'true')
+        env:
+          PR_BODY: ${{ steps.gen.outputs.pr_body }}
+        run: |
+          mkdir -p /tmp/pr
+          printf '%s' "$PR_BODY" > /tmp/pr/body.txt
+
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+
+          python scripts/bump_state.py \
+            --pr-body /tmp/pr/body.txt \
+            --pr-title "${{ steps.gen.outputs.title }}"
+
+          git config user.name "auto-article-bot"
+          git config user.email "auto-article-bot@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain state/)" ]]; then
+            git add state/
+            git commit -m "chore(state): bump rotation after auto article merge [skip ci]"
+            git pull --rebase origin main || true
+            git push origin main
+            echo "Rotation state pushed."
+          else
+            echo "No rotation state changes."
+          fi
+
       - name: Post to Google Business Profile
         if: |
           success() &&

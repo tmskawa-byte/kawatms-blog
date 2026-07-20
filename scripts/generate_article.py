@@ -39,6 +39,7 @@ import os
 import random
 import re
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -88,6 +89,9 @@ TEXT_MODEL = "gemini-3.1-pro-preview"
 IMAGE_MODEL = "nano_banana_pro"
 HERO_ASPECT_RATIO = "16:9"
 HERO_RESOLUTION = "2K"
+STAGE2_JSON_MAX_RETRIES = 2
+STAGE2_JSON_RETRY_BASE_SLEEP = 4.0
+STAGE2_OUTPUT_LOG_CHARS = 500
 
 STATE_DIR = os.path.join(_REPO_ROOT, "state")
 RECENT_SUBTOPICS_FILE = os.path.join(STATE_DIR, "recent_subtopics.json")
@@ -196,6 +200,103 @@ def extract_json(text: str) -> Dict[str, Any]:
     if start == -1 or end == -1 or end <= start:
         raise ValueError(f"No JSON object found: {s[:200]}")
     return json.loads(s[start : end + 1])
+
+
+def build_stage2_retry_user_input(
+    original_user_input: str,
+    parse_error: Exception,
+    raw_output: str,
+) -> str:
+    raw_head = (raw_output or "")[:STAGE2_OUTPUT_LOG_CHARS]
+    return (
+        original_user_input
+        + "\n\n"
+        + "前回の出力は JSON として解釈できませんでした。"
+        + "記事の内容・整備士目線・出典に関する品質基準は変えず、"
+        + "同じ内容を必ず完全な JSON object だけで再出力してください。\n"
+        + "- Markdown code fence は使わない\n"
+        + "- 先頭は {、末尾は } にする\n"
+        + "- title, description, body_markdown, tags を含める\n"
+        + "- body_markdown 内の改行と引用符は JSON 文字列として正しくエスケープする\n"
+        + f"- 前回の parse error: {parse_error}\n"
+        + f"- 前回 output 先頭 {STAGE2_OUTPUT_LOG_CHARS} 字:\n{raw_head}"
+    )
+
+
+def generate_stage2_article_json(
+    chatllm: ChatLLMClient,
+    user_input: str,
+) -> Optional[Dict[str, Any]]:
+    current_user_input = user_input
+
+    for attempt in range(STAGE2_JSON_MAX_RETRIES + 1):
+        attempt_label = attempt + 1
+        try:
+            LOG.info(
+                "Stage 2 (article body) starting... attempt %d/%d",
+                attempt_label,
+                STAGE2_JSON_MAX_RETRIES + 1,
+            )
+            response = chatllm.chat_with_metadata(
+                model=TEXT_MODEL,
+                system=STAGE2_SYSTEM_PROMPT,
+                user=current_user_input,
+                response_format="json",
+                max_tokens=6000,
+                timeout=240,
+            )
+        except ChatLLMError as e:
+            LOG.error(
+                "Stage 2 failed on attempt %d/%d: %s",
+                attempt_label,
+                STAGE2_JSON_MAX_RETRIES + 1,
+                e,
+            )
+            raise
+
+        stage2_raw = response.content
+        LOG.info(
+            "Stage 2 finish_reason=%s usage=%s attempt=%d/%d",
+            response.finish_reason,
+            response.usage or "(unavailable)",
+            attempt_label,
+            STAGE2_JSON_MAX_RETRIES + 1,
+        )
+        LOG.info("Stage 2 raw length: %d", len(stage2_raw))
+        LOG.info(
+            "Stage 2 raw head: %s",
+            stage2_raw[:STAGE2_OUTPUT_LOG_CHARS].replace("\n", "\\n"),
+        )
+
+        try:
+            return extract_json(stage2_raw)
+        except (ValueError, json.JSONDecodeError) as e:
+            if attempt >= STAGE2_JSON_MAX_RETRIES:
+                LOG.error(
+                    "Stage 2 JSON parse failed after %d retries: %s\nraw_head=%s",
+                    STAGE2_JSON_MAX_RETRIES,
+                    e,
+                    stage2_raw[:STAGE2_OUTPUT_LOG_CHARS],
+                )
+                return None
+
+            sleep = STAGE2_JSON_RETRY_BASE_SLEEP * (2 ** attempt)
+            LOG.warning(
+                "Stage 2 JSON parse failed on attempt %d/%d: %s. Retrying in %.1fs",
+                attempt_label,
+                STAGE2_JSON_MAX_RETRIES + 1,
+                e,
+                sleep,
+            )
+            current_user_input = build_stage2_retry_user_input(
+                user_input,
+                e,
+                stage2_raw,
+            )
+            time.sleep(sleep)
+
+    LOG.error("Stage 2 JSON parse failed after %d retries", STAGE2_JSON_MAX_RETRIES)
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -535,23 +636,11 @@ def main() -> int:
         affiliate_hint=full_hint,
     )
     try:
-        LOG.info("Stage 2 (article body) starting...")
-        stage2_raw = chatllm.chat(
-            model=TEXT_MODEL,
-            system=STAGE2_SYSTEM_PROMPT,
-            user=user_input_2,
-            response_format="json",
-            timeout=240,
-        )
+        stage2 = generate_stage2_article_json(chatllm, user_input_2)
     except ChatLLMError as e:
         LOG.error("Stage 2 failed: %s", e)
         return 5
-    LOG.info("Stage 2 raw length: %d", len(stage2_raw))
-
-    try:
-        stage2 = extract_json(stage2_raw)
-    except (ValueError, json.JSONDecodeError) as e:
-        LOG.error("Stage 2 JSON parse failed: %s\nraw=%s", e, stage2_raw[:1000])
+    if stage2 is None:
         return 6
 
     title = (stage2.get("title") or "").strip()

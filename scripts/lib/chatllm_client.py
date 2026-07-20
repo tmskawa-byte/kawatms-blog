@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import time
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -26,6 +27,15 @@ LOG = logging.getLogger(__name__)
 
 class ChatLLMError(RuntimeError):
     """Raised for any failure talking to ChatLLM/RouteLLM."""
+
+
+@dataclass(frozen=True)
+class ChatLLMResponse:
+    """Text content plus completion metadata useful for diagnostics."""
+
+    content: str
+    finish_reason: str
+    usage: Optional[Dict[str, Any]] = None
 
 
 class ChatLLMClient:
@@ -97,7 +107,7 @@ class ChatLLMClient:
     # ------------------------------------------------------------------
     # public
     # ------------------------------------------------------------------
-    def chat(
+    def chat_with_metadata(
         self,
         model: str,
         system: Optional[str] = None,
@@ -108,10 +118,11 @@ class ChatLLMClient:
         max_tokens: Optional[int] = None,
         timeout: int = 180,
         max_retries: int = 2,
-    ) -> str:
+    ) -> ChatLLMResponse:
         """
         Call a chat-completion model and return the textual content of the
-        first choice. Raises ChatLLMError on persistent failure.
+        first choice with finish metadata. Raises ChatLLMError on persistent
+        failure.
         """
         if messages is None:
             messages = []
@@ -143,11 +154,43 @@ class ChatLLMClient:
         data = self._post(payload, timeout=timeout, max_retries=max_retries, retry_base_sleep=4.0)
 
         try:
-            return data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            content = choice["message"]["content"]
+            finish_reason = choice.get("finish_reason") or "(missing)"
+            usage = data.get("usage") if isinstance(data.get("usage"), dict) else None
+            return ChatLLMResponse(content=content, finish_reason=finish_reason, usage=usage)
         except (KeyError, IndexError, TypeError) as e:
             raise ChatLLMError(
                 f"Unexpected chat response shape: {e} body={json.dumps(data)[:500]}"
             ) from e
+
+    def chat(
+        self,
+        model: str,
+        system: Optional[str] = None,
+        user: Optional[str] = None,
+        messages: Optional[List[Dict[str, str]]] = None,
+        response_format: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        timeout: int = 180,
+        max_retries: int = 2,
+    ) -> str:
+        """
+        Call a chat-completion model and return only the textual content.
+        Kept for existing call sites that do not need completion metadata.
+        """
+        return self.chat_with_metadata(
+            model=model,
+            system=system,
+            user=user,
+            messages=messages,
+            response_format=response_format,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            max_retries=max_retries,
+        ).content
 
     def generate_image(
         self,

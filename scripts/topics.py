@@ -314,21 +314,6 @@ SEIBI_SUBTOPIC_ROTATION = [
     "事故の判例",
 ]
 
-# ---------------------------------------------------------------------------
-# 旧仕様残置 (2026-06-07 までは現役だったローテ。将来復元用に残しておく)
-# ---------------------------------------------------------------------------
-# 旧 金曜日 整備の現場 ローテーション順
-FRIDAY_ROTATION = ["道路交通法", "新技術新TEC情報", "保険"]
-
-# 旧 日曜日 整備の現場 シーディング期間中ローテーション順
-SEIBI_ROTATION = [
-    "新車情報",
-    "整備情報",
-    "道路交通法",
-    "新技術新TEC情報",
-    "保険",
-]
-
 # AI・自動化 サブトピック
 AI_SUBTOPICS: Dict[str, Dict] = {
     "_default": {
@@ -509,13 +494,3 @@ def build_query(category: str, subtopic_key: str, candidate: str) -> str:
         meta = CATEGORY_SUBTOPICS[category]["_default"]
     extra = meta.get("extra_query", "")
     return f"{candidate} {extra}".strip()
-
-
-def is_friday_rotation_advanced(weekday: int) -> bool:
-    """金曜だけ friday_index を進めるべき。"""
-    return weekday == 4
-
-
-def is_sunday_rotation_advanced(weekday: int) -> bool:
-    """日曜だけ sunday_index を進めるべき。"""
-    return weekday == 6

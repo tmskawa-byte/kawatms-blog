@@ -35,7 +35,6 @@ RECENT_SUBTOPICS_FILE = os.path.join(STATE_DIR, "recent_subtopics.json")
 SUBTOPIC_HISTORY_KEEP = 20
 JST = timezone(timedelta(hours=9))
 
-FRIDAY_ROTATION_LEN = 3   # 道路交通法 / 新技術新TEC / 保険
 SUNDAY_ROTATION_LEN = 2   # AI / 対馬
 SEIBI_SUBTOPIC_ROTATION_LEN = 7
 

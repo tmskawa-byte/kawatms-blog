@@ -1,7 +1,7 @@
 {
   "friday_seibi": 0,
   "sunday_adhoc": 0,
-  "subtopic_seibi": 2,
+  "subtopic_seibi": 3,
   "_comment_friday": "0=道路交通法, 1=新技術新TEC, 2=保険 (mod 3)",
   "_comment_sunday": "0=AI・自動化, 1=対馬ライフ (mod 2)",
   "_comment_subtopic_seibi": "0=新車情報, 1=整備情報, 2=道路交通法, 3=新技術新TEC情報, 4=保険, 5=リコール情報, 6=事故の判例 (mod 7)"
